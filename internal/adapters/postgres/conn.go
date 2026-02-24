@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 )
 
@@ -34,10 +35,21 @@ func MustConnectToDb(cfg Config) *sql.DB {
 
 func Login(user models.Login_Request, db *sql.DB) (models.User, error) {
 	query := `SELECT * FROM users WHERE login = $1`
-	ans := db.QueryRow(query, user.Login)
-	return ans
+	var ans models.User
+	err := db.QueryRow(query, user.Login).Scan(
+		&ans.ID,
+		&ans.Username,
+		&ans.Login,
+		&ans.Password_Hash,
+		&ans.Created_at,
+	)
+	return ans, err
 }
 
-func Registration(user models.Registration_Request) *sql.DB {
-
+func Registration(user models.Registration_Request, db *sql.DB) error {
+	query := `INSERT INTO users (id, username, login, password_hash, created_at) 
+              VALUES ($1, $2, $3, $4, NOW())`
+	newID := uuid.New()
+	_, err := db.Exec(query, newID, user.Username, user.Login, user.Password)
+	return err
 }
