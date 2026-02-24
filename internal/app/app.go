@@ -20,6 +20,6 @@ func Run(cfg Config) {
 
 	contrl := controller.SetupRoutes()
 
-	contrl.Listen("8080")
+	contrl.Listen(":8080")
 
 }
