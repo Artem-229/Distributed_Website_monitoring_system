@@ -1,10 +1,14 @@
 package main
 
 import (
+	"Distributed_Website_monitoring_system/internal/adapters/postgres"
 	"Distributed_Website_monitoring_system/internal/app"
+	"Distributed_Website_monitoring_system/internal/controller"
 	"fmt"
 
 	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 
 	"github.com/joho/godotenv"
 )
@@ -19,19 +23,40 @@ func main() {
 
 	envinf := app.MustGetFromEnv()
 
-	connstr := fmt.Sprintf("postgres://%s:%s@localhost:%s/%s?sslmode=disable",
-		envinf.DB_USERNAME, envinf.DB_PASSWORD, envinf.DB_PORT, envinf.DB_NAME)
+	connstr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		envinf.DB_USERNAME, envinf.DB_PASSWORD, envinf.DB_HOST, envinf.DB_PORT, envinf.DB_NAME)
 
-	m, err := migrate.New(
-		"file://migrations",
-		connstr,
-	)
+	m, err := migrate.New("file:///app/migrations", connstr)
 
 	if err != nil {
 		panic(err)
 	}
 
-	m.Up()
+	fmt.Println("START MIGRATION")
 
-	app.Run(app.MustGetFromEnv())
+	err = m.Up()
+
+	if err != nil && err != migrate.ErrNoChange {
+		fmt.Println("MIGRATION ERROR:", err)
+	}
+
+	fmt.Println("MIGRATION DONE")
+
+	cfg := postgres.Config{
+		Host:     envinf.DB_HOST,
+		Port:     envinf.DB_PORT,
+		Username: envinf.DB_USERNAME,
+		Password: envinf.DB_PASSWORD,
+		Dbname:   envinf.DB_NAME,
+	}
+
+	conn := postgres.MustConnectToDb(cfg)
+
+	userrepo := &postgres.UserRepo{
+		DB: conn,
+	}
+
+	contrl := controller.SetupRoutes(userrepo)
+
+	contrl.Listen(":8080")
 }

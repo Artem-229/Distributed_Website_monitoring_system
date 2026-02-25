@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 )
 
@@ -15,6 +14,41 @@ type Config struct {
 	Username string
 	Password string
 	Dbname   string
+}
+
+type UserRepo struct {
+	DB *sql.DB
+}
+
+func (r *UserRepo) GetByLogin(login string) (models.User, error) {
+	query := `
+		SELECT id, username, login, password_hash, created_at
+		FROM users
+		WHERE login = $1
+	`
+
+	var ans models.User
+	err := r.DB.QueryRow(query, login).Scan(
+		&ans.ID,
+		&ans.Username,
+		&ans.Login,
+		&ans.Password_Hash,
+		&ans.Created_at,
+	)
+	return ans, err
+}
+
+func (r *UserRepo) Create(user models.User) error {
+	query := `INSERT INTO users (id, username, login, password_hash, created_at) 
+              VALUES ($1, $2, $3, $4, NOW())`
+	_, err := r.DB.Exec(
+		query,
+		user.ID,
+		user.Username,
+		user.Login,
+		user.Password_Hash,
+	)
+	return err
 }
 
 func MustConnectToDb(cfg Config) *sql.DB {
@@ -31,25 +65,4 @@ func MustConnectToDb(cfg Config) *sql.DB {
 	}
 
 	return db
-}
-
-func Login(user models.Login_Request, db *sql.DB) (models.User, error) {
-	query := `SELECT * FROM users WHERE login = $1`
-	var ans models.User
-	err := db.QueryRow(query, user.Login).Scan(
-		&ans.ID,
-		&ans.Username,
-		&ans.Login,
-		&ans.Password_Hash,
-		&ans.Created_at,
-	)
-	return ans, err
-}
-
-func Registration(user models.Registration_Request, db *sql.DB) error {
-	query := `INSERT INTO users (id, username, login, password_hash, created_at) 
-              VALUES ($1, $2, $3, $4, NOW())`
-	newID := uuid.New()
-	_, err := db.Exec(query, newID, user.Username, user.Login, user.Password)
-	return err
 }
