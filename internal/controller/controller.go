@@ -27,7 +27,10 @@ func SetupRoutes(repo app.UserRepository) *Controller {
 
 	controller.g.POST("/registration", func(c *gin.Context) {
 		var req models.Registration_Request
-		c.BindJSON(&req)
+		err := c.BindJSON(&req)
+		if err != nil {
+			return
+		}
 		val, err := app.Registration_User(req, controller.repo)
 		if err != nil {
 			c.IndentedJSON(http.StatusInternalServerError, gin.H{
@@ -50,7 +53,10 @@ func SetupRoutes(repo app.UserRepository) *Controller {
 
 	controller.g.POST("/login", func(c *gin.Context) {
 		var req models.Login_Request
-		c.BindJSON(&req)
+		err := c.BindJSON(&req)
+		if err != nil {
+			return
+		}
 		val, err := app.Login_User(req, controller.repo)
 		if err != nil {
 			c.IndentedJSON(http.StatusInternalServerError, gin.H{

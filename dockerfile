@@ -14,8 +14,8 @@ FROM alpine:3.19 AS production
 
 WORKDIR /app
 
-COPY --from=go-builder /app/main /main
+COPY --from=go-builder /app/main /app/main
 COPY --from=go-builder /app/migrations /app/migrations
 COPY .env .env
 
-ENTRYPOINT ["/main"]
+ENTRYPOINT ["/app/main"]
