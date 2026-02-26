@@ -1,6 +1,8 @@
 package app
 
-import "github.com/caarlos0/env"
+import (
+	"github.com/caarlos0/env"
+)
 
 type Config struct {
 	PORT        string `env:"PORT"`

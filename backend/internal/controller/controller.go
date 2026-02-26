@@ -19,6 +19,17 @@ func SetupRoutes(repo app.UserRepository) *Controller {
 		repo: repo,
 	}
 
+	controller.g.Use(func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Content-Type")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.Next()
+	})
+
 	controller.g.GET("/health", func(ctx *gin.Context) {
 		ctx.IndentedJSON(http.StatusOK, gin.H{
 			"message": "working",
@@ -33,6 +44,12 @@ func SetupRoutes(repo app.UserRepository) *Controller {
 		}
 		val, err := app.Registration_User(req, controller.repo)
 		if err != nil {
+			if err.Error() == "user already exists" {
+				c.IndentedJSON(http.StatusConflict, gin.H{
+					"message": "user already exists",
+				})
+				return
+			}
 			c.IndentedJSON(http.StatusInternalServerError, gin.H{
 				"message": "server problems",
 			})

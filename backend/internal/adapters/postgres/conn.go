@@ -3,8 +3,10 @@ package postgres
 import (
 	"Distributed_Website_monitoring_system/internal/models"
 	"database/sql"
+	"errors"
 	"fmt"
 
+	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 )
 
@@ -48,6 +50,12 @@ func (r *UserRepo) Create(user models.User) error {
 		user.Login,
 		user.Password_Hash,
 	)
+	var myerror *pq.Error
+	if errors.As(err, &myerror) {
+		if myerror.Code == "23505" {
+			return errors.New("user already exists")
+		}
+	}
 	return err
 }
 
