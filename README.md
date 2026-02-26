@@ -1,6 +1,6 @@
 # Distributed Website Monitoring System
 
-Web application for distributed website monitoring. Built with Go + React(for now).
+Приложение для мониторинга доступности сайтов. Написано на Go + React(пока что).
 
 ## Stack
 
