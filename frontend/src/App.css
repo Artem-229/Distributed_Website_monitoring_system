@@ -28,7 +28,6 @@ body {
   font-family: var(--font-mono);
 }
 
-/* ── Animations ── */
 @keyframes scanline {
   0%   { transform: translateY(-100%); }
   100% { transform: translateY(100vh); }
@@ -53,7 +52,6 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Layout ── */
 .app-root {
   min-height: 100vh;
   display: flex;
@@ -86,7 +84,6 @@ body {
   z-index: 100;
 }
 
-/* ── Auth Panel ── */
 .panel {
   background: var(--bg-panel);
   border: 1px solid var(--border);
@@ -134,7 +131,6 @@ body {
   margin-bottom: 36px;
 }
 
-/* ── Tabs ── */
 .tabs {
   display: flex;
   border-bottom: 1px solid var(--border);
@@ -166,7 +162,6 @@ body {
   color: var(--text);
 }
 
-/* ── Form ── */
 .field-group {
   margin-bottom: 20px;
 }
@@ -203,7 +198,6 @@ body {
   opacity: 0.5;
 }
 
-/* ── Button ── */
 .btn-primary {
   width: 100%;
   padding: 14px;
@@ -232,7 +226,6 @@ body {
   cursor: not-allowed;
 }
 
-/* ── Alerts ── */
 .alert-error {
   color: var(--red);
   font-size: 11px;
@@ -253,7 +246,6 @@ body {
   background: rgba(0,255,65,0.05);
 }
 
-/* ── Dashboard ── */
 .dashboard {
   min-height: 100vh;
   position: relative;

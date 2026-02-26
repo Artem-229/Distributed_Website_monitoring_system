@@ -3,7 +3,6 @@ import "./App.css";
 
 const API_BASE = "http://localhost:8080";
 
-// ── API layer ──────────────────────────────────────────────
 async function apiLogin(login, password) {
   const res = await fetch(`${API_BASE}/login`, {
     method: "POST",
@@ -26,7 +25,6 @@ async function apiRegister(username, login, password) {
   return data;
 }
 
-// ── Corner decorations ────────────────────────────────────
 function Corners() {
   return (
     <>
@@ -38,7 +36,6 @@ function Corners() {
   );
 }
 
-// ── Login form ────────────────────────────────────────────
 function LoginForm({ onSuccess }) {
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
@@ -88,7 +85,6 @@ function LoginForm({ onSuccess }) {
   );
 }
 
-// ── Register form ─────────────────────────────────────────
 function RegisterForm({ onRegistered }) {
   const [username, setUsername] = useState("");
   const [login, setLogin] = useState("");
@@ -148,7 +144,6 @@ function RegisterForm({ onRegistered }) {
   );
 }
 
-// ── Auth panel ────────────────────────────────────────────
 function AuthPanel({ onSuccess }) {
   const [mode, setMode] = useState("login");
   const [success, setSuccess] = useState("");
@@ -190,7 +185,6 @@ function AuthPanel({ onSuccess }) {
   );
 }
 
-// ── Dashboard ─────────────────────────────────────────────
 function Dashboard({ username, onLogout }) {
   const [time, setTime] = useState(new Date());
 
@@ -237,7 +231,6 @@ function Dashboard({ username, onLogout }) {
   );
 }
 
-// ── Root ──────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(null);
 
