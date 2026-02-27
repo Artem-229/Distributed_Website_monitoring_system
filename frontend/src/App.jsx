@@ -156,7 +156,7 @@ function AuthPanel({ onSuccess }) {
   return (
     <div className="panel">
       <Corners />
-      <div className="panel-logo">SYS // v2.4.1</div>
+      <div className="panel-logo">VERSION // v1.0</div>
       <div className="panel-title">NETWATCH</div>
       <div className="panel-subtitle">// DISTRIBUTED MONITORING SYSTEM</div>
 

@@ -3,12 +3,12 @@
 :root {
   --bg: #0a0f0a;
   --bg-panel: #0d140d;
-  --green: #00ff41;
+  --green: #729eb8;
   --green-dim: #00c030;
-  --green-faint: #003a10;
-  --green-glow: rgba(0, 255, 65, 0.15);
+  --green-faint: #b4c089;
+  --green-glow: rgba(147, 186, 157, 0.15);
   --text: #c8ffd4;
-  --text-muted: #4a7a52;
+  --text-muted: #657c69;
   --border: #1a3a1f;
   --border-active: #00ff41;
   --red: #ff2244;
