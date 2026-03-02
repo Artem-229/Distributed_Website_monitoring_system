@@ -11,6 +11,7 @@ async function apiLogin(login, password) {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "ACCESS DENIED");
+  localStorage.setItem("token", data.token);
   return data;
 }
 
@@ -22,6 +23,21 @@ async function apiRegister(username, login, password) {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "REGISTRATION FAILED");
+  return data;
+}
+
+async function apiRequest(url, options = {}) {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/api${url}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+      ...options.headers,
+    },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "REQUEST FAILED");
   return data;
 }
 
@@ -193,6 +209,11 @@ function Dashboard({ username, onLogout }) {
     return () => clearInterval(t);
   }, []);
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    onLogout();
+  };
+
   const cards = [
     { label: "ACTIVE NODES", value: "—" },
     { label: "UPTIME",       value: "—" },
@@ -210,7 +231,7 @@ function Dashboard({ username, onLogout }) {
           <span><span className="status-dot" />ONLINE</span>
           <span className="topbar-username">{username}</span>
           <span>{time.toLocaleTimeString()}</span>
-          <button className="btn-logout" onClick={onLogout}>DISCONNECT</button>
+          <button className="btn-logout" onClick={handleLogout}>DISCONNECT</button>
         </div>
       </div>
 
@@ -227,22 +248,6 @@ function Dashboard({ username, onLogout }) {
           ))}
         </div>
       </div>
-    </div>
-  );
-}
-
-export default function App() {
-  const [user, setUser] = useState(null);
-
-  if (user) {
-    return <Dashboard username={user} onLogout={() => setUser(null)} />;
-  }
-
-  return (
-    <div className="app-root">
-      <div className="bg-grid" />
-      <div className="scanline" />
-      <AuthPanel onSuccess={setUser} />
     </div>
   );
 }
