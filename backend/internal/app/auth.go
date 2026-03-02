@@ -11,12 +11,20 @@ type UserRepository interface {
 	Create(user models.User) error
 }
 
-func Login_User(req models.Login_Request, repo UserRepository) (bool, error) {
+func Login_User(req models.Login_Request, repo UserRepository, secret string) (bool, string, error) {
 	val, err := repo.GetByLogin(req.Login)
 	if err != nil {
-		return false, err
+		return false, "", nil
 	}
-	return Check_Password_Hash(val.Password_Hash, req.Password), nil
+	if Check_Password_Hash(val.Password_Hash, req.Password) {
+		token, err := GenerateJWTToken(val.ID, secret)
+		if err != nil {
+			return true, "", nil
+		}
+		return true, token, nil
+	}
+
+	return false, "", nil
 }
 
 func Registration_User(req models.Registration_Request, repo UserRepository) (bool, error) {

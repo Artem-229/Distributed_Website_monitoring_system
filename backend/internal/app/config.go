@@ -11,6 +11,7 @@ type Config struct {
 	DB_USERNAME string `env:"DB_USERNAME"`
 	DB_PASSWORD string `env:"DB_PASSWORD"`
 	DB_NAME     string `env:"DB_NAME"`
+	JWT_SECRET  string `env:"JWT_SECRET"`
 }
 
 func MustGetFromEnv() Config {

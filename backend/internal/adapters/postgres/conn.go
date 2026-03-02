@@ -22,6 +22,10 @@ type UserRepo struct {
 	DB *sql.DB
 }
 
+type MonitorRepo struct {
+	DB *sql.DB
+}
+
 func (r *UserRepo) GetByLogin(login string) (models.User, error) {
 	query := `
 		SELECT id, username, login, password_hash, created_at
@@ -59,6 +63,11 @@ func (r *UserRepo) Create(user models.User) error {
 	return err
 }
 
+/*
+	func (r *MonitorRepo) GetMonitorsByUserID(users_id uuid.UUID) *sql.DB {
+
+}
+*/
 func MustConnectToDb(cfg Config) *sql.DB {
 	connstr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.Dbname,

@@ -56,7 +56,7 @@ func main() {
 		DB: conn,
 	}
 
-	contrl := controller.SetupRoutes(userrepo)
+	contrl := controller.SetupRoutes(userrepo, envinf.JWT_SECRET)
 
 	contrl.Listen(":8080")
 }

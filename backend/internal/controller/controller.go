@@ -2,6 +2,7 @@ package controller
 
 import (
 	"Distributed_Website_monitoring_system/internal/app"
+	"Distributed_Website_monitoring_system/internal/middleware"
 	"Distributed_Website_monitoring_system/internal/models"
 	"net/http"
 
@@ -9,15 +10,19 @@ import (
 )
 
 type Controller struct {
-	g    *gin.Engine
-	repo app.UserRepository
+	g      *gin.Engine
+	repo   app.UserRepository
+	secret string
 }
 
-func SetupRoutes(repo app.UserRepository) *Controller {
+func SetupRoutes(repo app.UserRepository, secret string) *Controller {
 	controller := &Controller{
-		g:    gin.Default(),
-		repo: repo,
+		g:      gin.Default(),
+		repo:   repo,
+		secret: secret,
 	}
+
+	authorized := controller.g.Group("/api", middleware.CheckJWT(secret))
 
 	controller.g.Use(func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
@@ -74,8 +79,14 @@ func SetupRoutes(repo app.UserRepository) *Controller {
 		if err != nil {
 			return
 		}
-		val, err := app.Login_User(req, controller.repo)
+		val, token, err := app.Login_User(req, controller.repo, controller.secret)
 		if err != nil {
+			if token == "" {
+				c.IndentedJSON(http.StatusConflict, gin.H{
+					"message": "problems with token generating",
+				})
+				return
+			}
 			c.IndentedJSON(http.StatusInternalServerError, gin.H{
 				"message": "problem with server",
 			})
@@ -84,14 +95,22 @@ func SetupRoutes(repo app.UserRepository) *Controller {
 		if val {
 			c.IndentedJSON(http.StatusOK, gin.H{
 				"message": "login succesfull",
+				"token":   token,
 			})
 			return
 		} else {
 			c.IndentedJSON(http.StatusUnauthorized, gin.H{
 				"message": "user not found",
+				"token":   token,
 			})
 			return
 		}
+	})
+
+	authorized.POST("/monitors", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "accepted",
+		})
 	})
 
 	return controller
