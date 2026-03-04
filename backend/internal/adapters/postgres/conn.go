@@ -22,10 +22,6 @@ type UserRepo struct {
 	DB *sql.DB
 }
 
-type MonitorRepo struct {
-	DB *sql.DB
-}
-
 func (r *UserRepo) GetByLogin(login string) (models.User, error) {
 	query := `
 		SELECT id, username, login, password_hash, created_at
