@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./App.css";
 
 const API_BASE = "http://localhost:8080";
@@ -32,7 +32,7 @@ async function apiRequest(url, options = {}) {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       ...options.headers,
     },
   });
@@ -41,81 +41,58 @@ async function apiRequest(url, options = {}) {
   return data;
 }
 
-async function apiGetMonitors() {
-  return apiRequest("/monitors");
-}
-
-async function apiAddMonitor(url, timeInterval) {
-  return apiRequest("/addmonitor", {
+const apiGetMonitors = () => apiRequest("/monitors");
+const apiAddMonitor = (url, timeInterval) =>
+  apiRequest("/addmonitor", {
     method: "POST",
     body: JSON.stringify({ Url: url, Time_interval: timeInterval, Is_active: true }),
   });
+const apiDeleteMonitor = (id) =>
+  apiRequest("/deletemonitor", { method: "POST", body: JSON.stringify({ Id: id }) });
+const apiGetChecks = (monitorId) =>
+  apiRequest(`/checks/${monitorId}`, { method: "POST" });
+
+// ─── Tiny glitch effect hook ───────────────────────────────────────────────
+function useGlitch() {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const go = () => {
+      el.classList.add("glitch-active");
+      setTimeout(() => el.classList.remove("glitch-active"), 200);
+    };
+    const t = setInterval(go, 4000 + Math.random() * 6000);
+    return () => clearInterval(t);
+  }, []);
+  return ref;
 }
 
-async function apiDeleteMonitor(id) {
-  return apiRequest("/deletemonitor", {
-    method: "POST",
-    body: JSON.stringify({ Id: id }),
-  });
-}
-
-function Corners() {
-  return (
-    <>
-      <div className="corner corner-tl" />
-      <div className="corner corner-tr" />
-      <div className="corner corner-bl" />
-      <div className="corner corner-br" />
-    </>
-  );
-}
-
+// ─── Auth Panel ────────────────────────────────────────────────────────────
 function LoginForm({ onSuccess }) {
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async () => {
-    if (!login || !password) { setError("ALL FIELDS REQUIRED"); return; }
+  const submit = async () => {
+    if (!login || !password) return setError("ALL FIELDS REQUIRED");
     setError(""); setLoading(true);
-    try {
-      await apiLogin(login, password);
-      onSuccess(login);
-    } catch (e) {
-      setError(e.message);
-    }
+    try { await apiLogin(login, password); onSuccess(login); }
+    catch (e) { setError(e.message); }
     setLoading(false);
   };
 
   return (
-    <>
-      <div className="field-group">
-        <label className="field-label">// IDENTIFIER</label>
-        <input
-          className="field-input"
-          value={login}
-          onChange={e => setLogin(e.target.value)}
-          placeholder="user@domain.net"
-          autoComplete="off"
-        />
-      </div>
-      <div className="field-group">
-        <label className="field-label">// AUTH KEY</label>
-        <input
-          className="field-input"
-          type="password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          placeholder="••••••••••••"
-          onKeyDown={e => e.key === "Enter" && handleSubmit()}
-        />
-      </div>
-      <button className="btn-primary" onClick={handleSubmit} disabled={loading}>
-        {loading ? "AUTHENTICATING..." : "ENTER SYSTEM"}
+    <div className="form-body">
+      <Field label="IDENTIFIER" value={login} onChange={setLogin} placeholder="user@domain" />
+      <Field label="AUTH KEY" type="password" value={password} onChange={setPassword}
+        placeholder="••••••••" onKeyDown={e => e.key === "Enter" && submit()} />
+      {error && <div className="form-error">⚠ {error}</div>}
+      <button className="btn-primary" onClick={submit} disabled={loading}>
+        {loading ? <span className="spinner" /> : "ENTER SYSTEM"}
       </button>
-      {error && <div className="alert-error">⚠ {error}</div>}
-    </>
+    </div>
   );
 }
 
@@ -126,268 +103,275 @@ function RegisterForm({ onRegistered }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async () => {
-    if (!username || !login || !password) { setError("ALL FIELDS REQUIRED"); return; }
+  const submit = async () => {
+    if (!username || !login || !password) return setError("ALL FIELDS REQUIRED");
     setError(""); setLoading(true);
-    try {
-      await apiRegister(username, login, password);
-      onRegistered(login);
-    } catch (e) {
-      setError(e.message);
-    }
+    try { await apiRegister(username, login, password); onRegistered(); }
+    catch (e) { setError(e.message); }
     setLoading(false);
   };
 
   return (
-    <>
-      <div className="field-group">
-        <label className="field-label">// ALIAS</label>
-        <input
-          className="field-input"
-          value={username}
-          onChange={e => setUsername(e.target.value)}
-          placeholder="your_handle"
-        />
-      </div>
-      <div className="field-group">
-        <label className="field-label">// IDENTIFIER</label>
-        <input
-          className="field-input"
-          value={login}
-          onChange={e => setLogin(e.target.value)}
-          placeholder="user@domain.net"
-          autoComplete="off"
-        />
-      </div>
-      <div className="field-group">
-        <label className="field-label">// AUTH KEY</label>
-        <input
-          className="field-input"
-          type="password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          placeholder="••••••••••••"
-          onKeyDown={e => e.key === "Enter" && handleSubmit()}
-        />
-      </div>
-      <button className="btn-primary" onClick={handleSubmit} disabled={loading}>
-        {loading ? "REGISTERING..." : "CREATE IDENTITY"}
+    <div className="form-body">
+      <Field label="CALLSIGN" value={username} onChange={setUsername} placeholder="handle" />
+      <Field label="IDENTIFIER" value={login} onChange={setLogin} placeholder="user@domain" />
+      <Field label="AUTH KEY" type="password" value={password} onChange={setPassword}
+        placeholder="••••••••" onKeyDown={e => e.key === "Enter" && submit()} />
+      {error && <div className="form-error">⚠ {error}</div>}
+      <button className="btn-primary" onClick={submit} disabled={loading}>
+        {loading ? <span className="spinner" /> : "CREATE IDENTITY"}
       </button>
-      {error && <div className="alert-error">⚠ {error}</div>}
-    </>
-  );
-}
-
-function AuthPanel({ onSuccess }) {
-  const [mode, setMode] = useState("login");
-  const [success, setSuccess] = useState("");
-
-  const handleRegistered = () => {
-    setSuccess("IDENTITY REGISTERED // PROCEED TO AUTH");
-    setMode("login");
-  };
-
-  return (
-    <div className="panel">
-      <Corners />
-      <div className="panel-logo">VERSION // v1.0</div>
-      <div className="panel-title">NETWATCH</div>
-      <div className="panel-subtitle">// DISTRIBUTED MONITORING SYSTEM</div>
-
-      <div className="tabs">
-        <button
-          className={`tab ${mode === "login" ? "active" : ""}`}
-          onClick={() => { setMode("login"); setSuccess(""); }}
-        >
-          AUTH
-        </button>
-        <button
-          className={`tab ${mode === "register" ? "active" : ""}`}
-          onClick={() => { setMode("register"); setSuccess(""); }}
-        >
-          REGISTER
-        </button>
-      </div>
-
-      {mode === "login"
-        ? <LoginForm onSuccess={onSuccess} />
-        : <RegisterForm onRegistered={handleRegistered} />
-      }
-
-      {success && <div className="alert-success">✓ {success}</div>}
     </div>
   );
 }
 
-function AddMonitorForm({ onAdded }) {
+function Field({ label, value, onChange, placeholder, type = "text", onKeyDown }) {
+  return (
+    <div className="field">
+      <span className="field-label">{label}</span>
+      <input className="field-input" type={type} value={value}
+        onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        onKeyDown={onKeyDown} autoComplete="off" />
+    </div>
+  );
+}
+
+function AuthScreen({ onSuccess }) {
+  const [tab, setTab] = useState("login");
+  const [ok, setOk] = useState("");
+  const glitchRef = useGlitch();
+
+  return (
+    <div className="auth-root">
+      <div className="auth-bg" />
+      <div className="auth-card">
+        <div className="auth-header">
+          <div className="auth-logo" ref={glitchRef} data-text="NETWATCH">NETWATCH</div>
+          <div className="auth-sub">// DISTRIBUTED MONITORING SYSTEM //</div>
+        </div>
+        <div className="auth-tabs">
+          {["login", "register"].map(t => (
+            <button key={t} className={`auth-tab ${tab === t ? "active" : ""}`}
+              onClick={() => { setTab(t); setOk(""); }}>
+              {t === "login" ? "AUTHENTICATE" : "REGISTER"}
+            </button>
+          ))}
+        </div>
+        {tab === "login"
+          ? <LoginForm onSuccess={onSuccess} />
+          : <RegisterForm onRegistered={() => { setOk("IDENTITY CREATED — AUTHENTICATE NOW"); setTab("login"); }} />
+        }
+        {ok && <div className="form-ok">✓ {ok}</div>}
+      </div>
+    </div>
+  );
+}
+
+// ─── Monitor card with checks panel ───────────────────────────────────────
+function MonitorCard({ monitor, onDeleted }) {
+  const [deleting, setDeleting] = useState(false);
+  const [checks, setChecks] = useState(null);
+  const [loadingChecks, setLoadingChecks] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try { await apiDeleteMonitor(monitor.Id); onDeleted(); }
+    catch (e) { console.error(e); setDeleting(false); }
+  };
+
+  const toggleChecks = async () => {
+    if (expanded) { setExpanded(false); return; }
+    setExpanded(true);
+    setLoadingChecks(true);
+    try {
+      const data = await apiGetChecks(monitor.Id);
+      setChecks(data.monitors || []);
+    } catch { setChecks([]); }
+    setLoadingChecks(false);
+  };
+
+  const lastCheck = checks && checks.length > 0 ? checks[0] : null;
+  const avgPing = checks && checks.length > 0
+    ? Math.round(checks.reduce((s, c) => s + c.Responce_time, 0) / checks.length)
+    : null;
+
+  return (
+    <div className={`monitor-card ${expanded ? "expanded" : ""}`}>
+      <div className="mc-top">
+        <div className="mc-indicator" style={{ background: monitor.Is_active ? "var(--green)" : "var(--dim)" }} />
+        <div className="mc-url">{monitor.Url}</div>
+        <div className="mc-badge">{monitor.Is_active ? "LIVE" : "IDLE"}</div>
+      </div>
+
+      <div className="mc-meta">
+        <span>INTERVAL <b>{monitor.Time_interval}s</b></span>
+        {avgPing !== null && <span>AVG <b>{avgPing}ms</b></span>}
+        {lastCheck && (
+          <span className={lastCheck.Status_ok ? "ok" : "fail"}>
+            {lastCheck.Status_ok ? "● ONLINE" : "● OFFLINE"}
+          </span>
+        )}
+      </div>
+
+      <div className="mc-actions">
+        <button className="btn-ghost" onClick={toggleChecks}>
+          {expanded ? "▲ HIDE HISTORY" : "▼ SHOW HISTORY"}
+        </button>
+        <button className="btn-danger" onClick={handleDelete} disabled={deleting}>
+          {deleting ? "REMOVING…" : "REMOVE"}
+        </button>
+      </div>
+
+      {expanded && (
+        <div className="mc-checks">
+          {loadingChecks
+            ? <div className="checks-loading">LOADING TELEMETRY…</div>
+            : checks && checks.length === 0
+              ? <div className="checks-empty">// NO DATA YET — WORKER PENDING</div>
+              : checks && (
+                <table className="checks-table">
+                  <thead>
+                    <tr><th>TIME</th><th>PING</th><th>STATUS</th></tr>
+                  </thead>
+                  <tbody>
+                    {checks.map((c, i) => (
+                      <tr key={i}>
+                        <td>{new Date(c.Checked_at).toLocaleTimeString()}</td>
+                        <td>{Math.round(c.Responce_time)}ms</td>
+                        <td className={c.Status_ok ? "ok" : "fail"}>
+                          {c.Status_ok ? "OK" : "FAIL"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )
+          }
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Add monitor form ──────────────────────────────────────────────────────
+function AddMonitorPanel({ onAdded }) {
   const [url, setUrl] = useState("");
   const [interval, setInterval] = useState(60);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [open, setOpen] = useState(false);
 
-  const handleSubmit = async () => {
-    if (!url) { setError("URL REQUIRED"); return; }
+  const submit = async () => {
+    if (!url) return setError("URL REQUIRED");
     setError(""); setLoading(true);
-    try {
-      await apiAddMonitor(url, interval);
-      setUrl("");
-      setInterval(60);
-      onAdded();
-    } catch (e) {
-      setError(e.message);
-    }
+    try { await apiAddMonitor(url, interval); setUrl(""); setInterval(60); setOpen(false); onAdded(); }
+    catch (e) { setError(e.message); }
     setLoading(false);
   };
 
   return (
-    <div className="card" style={{ marginBottom: "32px" }}>
-      <Corners />
-      <div className="card-label">ADD NEW MONITOR</div>
-      <div style={{ marginTop: "16px" }}>
-        <div className="field-group">
-          <label className="field-label">// TARGET URL</label>
-          <input
-            className="field-input"
-            value={url}
-            onChange={e => setUrl(e.target.value)}
-            placeholder="https://example.com"
-          />
-        </div>
-        <div className="field-group">
-          <label className="field-label">// CHECK INTERVAL (SEC)</label>
-          <input
-            className="field-input"
-            type="number"
-            value={interval}
-            onChange={e => setInterval(Number(e.target.value))}
-            placeholder="60"
-          />
-        </div>
-        <button className="btn-primary" onClick={handleSubmit} disabled={loading} style={{ marginTop: "12px" }}>
-          {loading ? "ADDING..." : "ADD MONITOR"}
-        </button>
-        {error && <div className="alert-error">⚠ {error}</div>}
-      </div>
-    </div>
-  );
-}
-
-function MonitorList({ monitors, onDeleted }) {
-  const [deletingId, setDeletingId] = useState(null);
-
-  const handleDelete = async (id) => {
-    setDeletingId(id);
-    try {
-      await apiDeleteMonitor(id);
-      onDeleted();
-    } catch (e) {
-      console.error(e.message);
-    }
-    setDeletingId(null);
-  };
-
-  if (monitors.length === 0) {
-    return (
-      <div style={{ color: "var(--text-muted)", fontSize: "12px", letterSpacing: "2px" }}>
-        // NO MONITORS CONFIGURED
-      </div>
-    );
-  }
-
-  return (
-    <div className="cards">
-      {monitors.map((m, i) => (
-        <div key={i} className="card">
-          <Corners />
-          <div className="card-label">MONITOR</div>
-          <div className="card-value" style={{ fontSize: "14px", wordBreak: "break-all" }}>{m.Url}</div>
-          <div style={{ marginTop: "8px", fontSize: "10px", color: "var(--text-muted)", letterSpacing: "2px" }}>
-            INTERVAL: {m.Time_interval}s &nbsp;|&nbsp; {m.Is_active ? "ACTIVE" : "INACTIVE"}
-          </div>
-          <button
-            className="btn-logout"
-            onClick={() => handleDelete(m.Id)}
-            disabled={deletingId === m.Id}
-            style={{ marginTop: "12px", width: "100%" }}
-          >
-            {deletingId === m.Id ? "REMOVING..." : "REMOVE"}
+    <div className="add-panel">
+      <button className="btn-add" onClick={() => setOpen(o => !o)}>
+        {open ? "✕ CANCEL" : "+ ADD MONITOR"}
+      </button>
+      {open && (
+        <div className="add-form">
+          <Field label="TARGET URL" value={url} onChange={setUrl} placeholder="https://example.com" />
+          <Field label="INTERVAL (SEC)" type="number" value={interval} onChange={v => setInterval(Number(v))} placeholder="60" />
+          {error && <div className="form-error">⚠ {error}</div>}
+          <button className="btn-primary" onClick={submit} disabled={loading}>
+            {loading ? <span className="spinner" /> : "DEPLOY MONITOR"}
           </button>
         </div>
-      ))}
+      )}
     </div>
   );
 }
 
+// ─── Dashboard ─────────────────────────────────────────────────────────────
 function Dashboard({ username, onLogout }) {
-  const [time, setTime] = useState(new Date());
   const [monitors, setMonitors] = useState([]);
-  const [loadingMonitors, setLoadingMonitors] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [clock, setClock] = useState(new Date());
+  const glitchRef = useGlitch();
 
   const fetchMonitors = async () => {
-    setLoadingMonitors(true);
-    try {
-      const data = await apiGetMonitors();
-      setMonitors(data.monitors || []);
-    } catch (e) {
-      setMonitors([]);
-    }
-    setLoadingMonitors(false);
+    setLoading(true);
+    try { const d = await apiGetMonitors(); setMonitors(d.monitors || []); }
+    catch { setMonitors([]); }
+    setLoading(false);
   };
 
   useEffect(() => {
-    const t = setInterval(() => setTime(new Date()), 1000);
     fetchMonitors();
+    const t = setInterval(() => setClock(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    onLogout();
-  };
+  const logout = () => { localStorage.removeItem("token"); onLogout(); };
+
+  const active = monitors.filter(m => m.Is_active).length;
 
   return (
-    <div className="dashboard">
-      <div className="bg-grid" />
-      <div className="scanline" />
+    <div className="dash-root">
+      <div className="dash-bg" />
 
-      <div className="topbar">
-        <div className="topbar-logo">NETWATCH</div>
-        <div className="topbar-right">
-          <span><span className="status-dot" />ONLINE</span>
-          <span className="topbar-username">{username}</span>
-          <span>{time.toLocaleTimeString()}</span>
-          <button className="btn-logout" onClick={handleLogout}>DISCONNECT</button>
+      <header className="dash-header">
+        <div className="dh-left">
+          <div className="dh-logo" ref={glitchRef} data-text="NETWATCH">NETWATCH</div>
+          <div className="dh-status">
+            <span className="pulse" />
+            <span>SYSTEMS NOMINAL</span>
+          </div>
+        </div>
+        <div className="dh-right">
+          <div className="dh-clock">{clock.toLocaleTimeString()}</div>
+          <div className="dh-user">// {username.toUpperCase()}</div>
+          <button className="btn-logout" onClick={logout}>DISCONNECT</button>
+        </div>
+      </header>
+
+      <div className="dash-stats">
+        <div className="stat-box">
+          <div className="stat-val">{monitors.length}</div>
+          <div className="stat-label">TOTAL MONITORS</div>
+        </div>
+        <div className="stat-box">
+          <div className="stat-val" style={{ color: "var(--green)" }}>{active}</div>
+          <div className="stat-label">ACTIVE</div>
+        </div>
+        <div className="stat-box">
+          <div className="stat-val" style={{ color: "var(--dim)" }}>{monitors.length - active}</div>
+          <div className="stat-label">IDLE</div>
         </div>
       </div>
 
-      <div className="dash-content">
-        <div className="dash-title">SYSTEM ONLINE</div>
-        <div className="dash-subtitle">// MONITORING DASHBOARD</div>
+      <div className="dash-body">
+        <div className="section-head">
+          <span>// MONITOR NODES</span>
+          <AddMonitorPanel onAdded={fetchMonitors} />
+        </div>
 
-        <AddMonitorForm onAdded={fetchMonitors} />
-
-        <div className="dash-subtitle" style={{ marginBottom: "16px" }}>// ACTIVE MONITORS</div>
-        {loadingMonitors
-          ? <div style={{ color: "var(--text-muted)", fontSize: "12px", letterSpacing: "2px" }}>LOADING...</div>
-          : <MonitorList monitors={monitors} onDeleted={fetchMonitors} />
+        {loading
+          ? <div className="dash-loading">SCANNING NODES…</div>
+          : monitors.length === 0
+            ? <div className="dash-empty">// NO MONITORS DEPLOYED</div>
+            : <div className="monitor-grid">
+                {monitors.map((m, i) => (
+                  <MonitorCard key={m.Id || i} monitor={m} onDeleted={fetchMonitors} />
+                ))}
+              </div>
         }
       </div>
     </div>
   );
 }
 
+// ─── Root ──────────────────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(null);
-
-  if (user) {
-    return <Dashboard username={user} onLogout={() => setUser(null)} />;
-  }
-
-  return (
-    <div className="app-root">
-      <div className="bg-grid" />
-      <div className="scanline" />
-      <AuthPanel onSuccess={setUser} />
-    </div>
-  );
+  return user
+    ? <Dashboard username={user} onLogout={() => setUser(null)} />
+    : <AuthScreen onSuccess={setUser} />;
 }
