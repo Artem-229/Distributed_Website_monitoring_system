@@ -7,10 +7,10 @@ import (
 )
 
 type Monitor struct {
-	Id            uuid.UUID
-	Users_id      uuid.UUID
-	Url           string
-	Time_interval int
-	Is_active     bool
-	Created_at    time.Time
+	Id            uuid.UUID `json:"Id"`
+	Users_id      uuid.UUID `json:"Users_id"`
+	Url           string    `json:"Url"`
+	Time_interval int       `json:"Time_interval"`
+	Is_active     bool      `json:"Is_active"`
+	Created_at    time.Time `json:"Created_at"`
 }

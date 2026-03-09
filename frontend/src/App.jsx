@@ -52,6 +52,13 @@ async function apiAddMonitor(url, timeInterval) {
   });
 }
 
+async function apiDeleteMonitor(id) {
+  return apiRequest("/deletemonitor", {
+    method: "POST",
+    body: JSON.stringify({ Id: id }),
+  });
+}
+
 function Corners() {
   return (
     <>
@@ -265,7 +272,20 @@ function AddMonitorForm({ onAdded }) {
   );
 }
 
-function MonitorList({ monitors }) {
+function MonitorList({ monitors, onDeleted }) {
+  const [deletingId, setDeletingId] = useState(null);
+
+  const handleDelete = async (id) => {
+    setDeletingId(id);
+    try {
+      await apiDeleteMonitor(id);
+      onDeleted();
+    } catch (e) {
+      console.error(e.message);
+    }
+    setDeletingId(null);
+  };
+
   if (monitors.length === 0) {
     return (
       <div style={{ color: "var(--text-muted)", fontSize: "12px", letterSpacing: "2px" }}>
@@ -284,6 +304,14 @@ function MonitorList({ monitors }) {
           <div style={{ marginTop: "8px", fontSize: "10px", color: "var(--text-muted)", letterSpacing: "2px" }}>
             INTERVAL: {m.Time_interval}s &nbsp;|&nbsp; {m.Is_active ? "ACTIVE" : "INACTIVE"}
           </div>
+          <button
+            className="btn-logout"
+            onClick={() => handleDelete(m.Id)}
+            disabled={deletingId === m.Id}
+            style={{ marginTop: "12px", width: "100%" }}
+          >
+            {deletingId === m.Id ? "REMOVING..." : "REMOVE"}
+          </button>
         </div>
       ))}
     </div>
@@ -341,7 +369,7 @@ function Dashboard({ username, onLogout }) {
         <div className="dash-subtitle" style={{ marginBottom: "16px" }}>// ACTIVE MONITORS</div>
         {loadingMonitors
           ? <div style={{ color: "var(--text-muted)", fontSize: "12px", letterSpacing: "2px" }}>LOADING...</div>
-          : <MonitorList monitors={monitors} />
+          : <MonitorList monitors={monitors} onDeleted={fetchMonitors} />
         }
       </div>
     </div>

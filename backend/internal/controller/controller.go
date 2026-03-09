@@ -113,9 +113,10 @@ func SetupRoutes(repo app.UserRepository, secret string, monitor app.MonitorRepo
 	authorized.GET("/monitors", func(c *gin.Context) {
 
 		UserIDraw, _ := c.Get("UserID")
+		UserIDstring := UserIDraw.(string)
 
-		UserID, ok := UserIDraw.(uuid.UUID)
-		if !ok {
+		UserID, err := uuid.Parse(UserIDstring)
+		if err != nil {
 			c.IndentedJSON(http.StatusInternalServerError, gin.H{
 				"message": "something wrong with id",
 			})
@@ -123,7 +124,7 @@ func SetupRoutes(repo app.UserRepository, secret string, monitor app.MonitorRepo
 		}
 
 		ans, err := monitor.GetMonitors(UserID)
-		if !err {
+		if err != nil {
 			c.IndentedJSON(http.StatusInternalServerError, gin.H{
 				"message": "problems with monitors parsing",
 			})
@@ -148,7 +149,8 @@ func SetupRoutes(repo app.UserRepository, secret string, monitor app.MonitorRepo
 
 		req.Id = uuid.New()
 		UserIDRaw, _ := c.Get("UserID")
-		req.Users_id = UserIDRaw.(uuid.UUID)
+		UserIDstring := UserIDRaw.(string)
+		req.Users_id, _ = uuid.Parse(UserIDstring)
 
 		ok, err := app.AddMonitor(req, monitor)
 		if err != nil {
@@ -174,7 +176,7 @@ func SetupRoutes(repo app.UserRepository, secret string, monitor app.MonitorRepo
 		var mon models.Monitor
 		err := c.BindJSON(&mon)
 
-		ok, err := app.DeleteMonitor(mon, monitor)
+		ok, err := app.DeleteMonitor(mon.Id, monitor)
 		if err != nil {
 			c.IndentedJSON(http.StatusInternalServerError, gin.H{
 				"message": "error while loading the monitor",
@@ -190,7 +192,8 @@ func SetupRoutes(repo app.UserRepository, secret string, monitor app.MonitorRepo
 
 	authorized.POST("/getmonitor", func(c *gin.Context) {
 		UserIDRaw, _ := c.Get("UserID")
-		UserID := UserIDRaw.(uuid.UUID)
+		UserIDstring := UserIDRaw.(string)
+		UserID, _ := uuid.Parse(UserIDstring)
 
 		mon, err := monitor.GetMonitor(UserID)
 		if err != nil {

@@ -7,19 +7,19 @@ import (
 )
 
 type MonitorRepository interface {
-	GetMonitors(id uuid.UUID) ([]models.Monitor, bool)
+	GetMonitors(id uuid.UUID) ([]models.Monitor, error)
 	AddMonitor(monitor models.Monitor) (bool, error)
-	DeleteMonitor(monitor models.Monitor) (bool, error)
+	DeleteMonitor(id uuid.UUID) (bool, error)
 	GetMonitor(id uuid.UUID) (models.Monitor, error)
 }
 
-func GetMonitors(id uuid.UUID, repo MonitorRepository) ([]models.Monitor, bool) {
-	get, check := repo.GetMonitors(id)
-	if check == false {
-		return nil, false
+func GetMonitors(id uuid.UUID, repo MonitorRepository) ([]models.Monitor, error) {
+	get, err := repo.GetMonitors(id)
+	if err != nil {
+		return nil, err
 	}
 
-	return get, true
+	return get, nil
 
 }
 
@@ -36,8 +36,8 @@ func AddMonitor(monitor models.Monitor, repo MonitorRepository) (bool, error) {
 	return false, nil
 }
 
-func DeleteMonitor(monitor models.Monitor, repo MonitorRepository) (bool, error) {
-	ok, err := repo.DeleteMonitor(monitor)
+func DeleteMonitor(id uuid.UUID, repo MonitorRepository) (bool, error) {
+	ok, err := repo.DeleteMonitor(id)
 	if err != nil {
 		return false, err
 	}

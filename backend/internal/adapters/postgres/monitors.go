@@ -11,11 +11,11 @@ type MonitorRepo struct {
 	DB *sql.DB
 }
 
-func (r *MonitorRepo) GetMonitors(id uuid.UUID) ([]models.Monitor, bool) {
+func (r *MonitorRepo) GetMonitors(id uuid.UUID) ([]models.Monitor, error) {
 	query := `
 		SELECT *
 		FROM monitors
-		WHERE user_id = $1
+		WHERE users_id = $1
 	`
 
 	res := make([]models.Monitor, 0)
@@ -24,7 +24,7 @@ func (r *MonitorRepo) GetMonitors(id uuid.UUID) ([]models.Monitor, bool) {
 
 	rows, err := r.DB.Query(query, id)
 	if err != nil {
-		return res, false
+		return res, err
 	}
 
 	defer rows.Close()
@@ -32,6 +32,7 @@ func (r *MonitorRepo) GetMonitors(id uuid.UUID) ([]models.Monitor, bool) {
 	for rows.Next() {
 		rows.Scan(
 			&ans.Id,
+			&ans.Users_id,
 			&ans.Url,
 			&ans.Time_interval,
 			&ans.Is_active,
@@ -40,11 +41,11 @@ func (r *MonitorRepo) GetMonitors(id uuid.UUID) ([]models.Monitor, bool) {
 		res = append(res, ans)
 	}
 
-	return res, true
+	return res, nil
 }
 
 func (r *MonitorRepo) AddMonitor(monitor models.Monitor) (bool, error) {
-	query := `INSERT INTO monitors (id, user_id, url, time_interval, is_active, created_at) VALUES ($1, $2, $3, $4, $5, NOW())`
+	query := `INSERT INTO monitors (id, users_id, url, time_interval, is_active, created_at) VALUES ($1, $2, $3, $4, $5, NOW())`
 
 	_, err := r.DB.Exec(query, monitor.Id, monitor.Users_id, monitor.Url, monitor.Time_interval, monitor.Is_active)
 	if err != nil {
@@ -55,14 +56,14 @@ func (r *MonitorRepo) AddMonitor(monitor models.Monitor) (bool, error) {
 
 }
 
-func (r *MonitorRepo) DeleteMonitor(monitor models.Monitor) (bool, error) {
+func (r *MonitorRepo) DeleteMonitor(id uuid.UUID) (bool, error) {
 	query := `
 		DELETE 
 		FROM monitors 
 		WHERE id = $1
 	`
 
-	_, err := r.DB.Exec(query, monitor.Id)
+	_, err := r.DB.Exec(query, id)
 	if err != nil {
 		return false, err
 	}
