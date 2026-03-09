@@ -5,6 +5,7 @@ import (
 	"Distributed_Website_monitoring_system/internal/app"
 	"Distributed_Website_monitoring_system/internal/controller"
 	"fmt"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -56,11 +57,27 @@ func main() {
 		DB: conn,
 	}
 
+	checksrepo := &postgres.ChecksRepo{
+		DB: conn,
+	}
+
 	userrepo := &postgres.UserRepo{
 		DB: conn,
 	}
 
-	contrl := controller.SetupRoutes(userrepo, envinf.JWT_SECRET, monitorrepo)
+	go func() {
+		for {
+			arr, err := monitorrepo.GetAllMonitors()
+			if err == nil {
+				for _, k := range arr {
+					go app.CheckPing(k, checksrepo)
+				}
+			}
+			time.Sleep(30 * time.Second)
+		}
+	}()
+
+	contrl := controller.SetupRoutes(userrepo, envinf.JWT_SECRET, monitorrepo, checksrepo)
 
 	contrl.Listen(":8080")
 }

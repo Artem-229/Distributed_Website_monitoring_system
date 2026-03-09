@@ -88,3 +88,24 @@ func (r *MonitorRepo) GetMonitor(id uuid.UUID) (models.Monitor, error) {
 
 	return req, nil
 }
+
+func (r *MonitorRepo) GetAllMonitors() ([]models.Monitor, error) {
+	query := `
+		SELECT * 
+		FROM monitors
+		`
+	var monitors []models.Monitor
+	rows, err := r.DB.Query(query)
+	if err != nil {
+		return monitors, err
+	}
+
+	for rows.Next() {
+		var ans models.Monitor
+		rows.Scan(&ans.Id, &ans.Users_id, &ans.Url, &ans.Time_interval, &ans.Is_active, &ans.Created_at)
+		monitors = append(monitors, ans)
+	}
+
+	return monitors, nil
+
+}

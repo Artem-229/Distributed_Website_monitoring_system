@@ -15,14 +15,16 @@ type Controller struct {
 	repo    app.UserRepository
 	secret  string
 	monitor app.MonitorRepository
+	checks  app.ChecksRepository
 }
 
-func SetupRoutes(repo app.UserRepository, secret string, monitor app.MonitorRepository) *Controller {
+func SetupRoutes(repo app.UserRepository, secret string, monitor app.MonitorRepository, checks app.ChecksRepository) *Controller {
 	controller := &Controller{
 		g:       gin.Default(),
 		repo:    repo,
 		secret:  secret,
 		monitor: monitor,
+		checks:  checks,
 	}
 
 	controller.g.Use(func(c *gin.Context) {
@@ -207,6 +209,23 @@ func SetupRoutes(repo app.UserRepository, secret string, monitor app.MonitorRepo
 			"message": "accepted",
 			"monitor": mon,
 		})
+	})
+
+	authorized.POST("/checks/:monitor_id", func(c *gin.Context) {
+		rowid := c.Param("monitor_id")
+		id, _ := uuid.Parse(rowid)
+		req, err := checks.GetChecks(id)
+		if err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{
+				"message": "problem with data loading",
+			})
+		}
+
+		c.IndentedJSON(http.StatusOK, gin.H{
+			"message":  "accepted",
+			"monitors": req,
+		})
+
 	})
 
 	return controller

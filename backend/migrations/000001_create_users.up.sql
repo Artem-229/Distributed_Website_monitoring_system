@@ -14,3 +14,11 @@ CREATE TABLE monitors (
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE TABLE monitor_checks (
+    id UUID PRIMARY KEY,
+    time_interval INTEGER NOT NULL,
+    responce_time FLOAT NOT NULL,
+    checked_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    status_ok BOOLEAN NOT NULL
+);

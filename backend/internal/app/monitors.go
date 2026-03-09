@@ -11,6 +11,7 @@ type MonitorRepository interface {
 	AddMonitor(monitor models.Monitor) (bool, error)
 	DeleteMonitor(id uuid.UUID) (bool, error)
 	GetMonitor(id uuid.UUID) (models.Monitor, error)
+	GetAllMonitors() ([]models.Monitor, error)
 }
 
 func GetMonitors(id uuid.UUID, repo MonitorRepository) ([]models.Monitor, error) {
@@ -56,4 +57,14 @@ func GetMonitor(id uuid.UUID, repo MonitorRepository) (models.Monitor, error) {
 	}
 
 	return mon, nil
+}
+
+func GetAllMonitors(repo MonitorRepository) ([]models.Monitor, error) {
+	mons, err := repo.GetAllMonitors()
+
+	if err != nil {
+		return mons, err
+	}
+
+	return mons, nil
 }
