@@ -68,15 +68,16 @@ func main() {
 	go func() {
 		for {
 			arr, err := monitorrepo.GetAllMonitors()
+			fmt.Println("WORKER: monitors count:", len(arr), "err:", err)
 			if err == nil {
 				for _, k := range arr {
-					go app.CheckPing(k, checksrepo)
+					_, _, err := app.CheckPing(k, checksrepo)
+					fmt.Println("WORKER: checked", k.Url, "err:", err)
 				}
 			}
 			time.Sleep(30 * time.Second)
 		}
 	}()
-
 	contrl := controller.SetupRoutes(userrepo, envinf.JWT_SECRET, monitorrepo, checksrepo)
 
 	contrl.Listen(":8080")

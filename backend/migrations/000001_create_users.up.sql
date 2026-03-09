@@ -17,6 +17,7 @@ CREATE TABLE monitors (
 
 CREATE TABLE monitor_checks (
     id UUID PRIMARY KEY,
+    monitor_id UUID NOT NULL,
     time_interval INTEGER NOT NULL,
     responce_time FLOAT NOT NULL,
     checked_at TIMESTAMP NOT NULL DEFAULT NOW(),
