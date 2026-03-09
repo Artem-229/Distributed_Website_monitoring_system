@@ -7,13 +7,14 @@ import (
 )
 
 type MonitorRepository interface {
-	Monitors(id uuid.UUID) ([]models.Monitor, bool)
+	GetMonitors(id uuid.UUID) ([]models.Monitor, bool)
+	AddMonitor(monitor models.Monitor) (bool, error)
+	DeleteMonitor(monitor models.Monitor) (bool, error)
+	GetMonitor(id uuid.UUID) (models.Monitor, error)
 }
 
-func GetMonitors(user models.User, repo MonitorRepository) ([]models.Monitor, bool) {
-	id := user.ID
-
-	get, check := repo.Monitors(id)
+func GetMonitors(id uuid.UUID, repo MonitorRepository) ([]models.Monitor, bool) {
+	get, check := repo.GetMonitors(id)
 	if check == false {
 		return nil, false
 	}
@@ -22,15 +23,37 @@ func GetMonitors(user models.User, repo MonitorRepository) ([]models.Monitor, bo
 
 }
 
-/* func AddMonitor() {
+func AddMonitor(monitor models.Monitor, repo MonitorRepository) (bool, error) {
+	ok, err := repo.AddMonitor(monitor)
+	if err != nil {
+		return false, err
+	}
 
+	if ok {
+		return true, nil
+	}
+
+	return false, nil
 }
 
-func DeleteMonitor() {
+func DeleteMonitor(monitor models.Monitor, repo MonitorRepository) (bool, error) {
+	ok, err := repo.DeleteMonitor(monitor)
+	if err != nil {
+		return false, err
+	}
 
+	if ok {
+		return true, err
+	}
+
+	return false, nil
 }
 
-func GetSpecificMonitor() {
+func GetMonitor(id uuid.UUID, repo MonitorRepository) (models.Monitor, error) {
+	mon, err := repo.GetMonitor(id)
+	if err != nil {
+		return mon, err
+	}
 
+	return mon, nil
 }
-*/

@@ -52,11 +52,15 @@ func main() {
 
 	conn := postgres.MustConnectToDb(cfg)
 
+	monitor := &postgres.MonitorRepo{
+		DB: conn,
+	}
+
 	userrepo := &postgres.UserRepo{
 		DB: conn,
 	}
 
-	contrl := controller.SetupRoutes(userrepo, envinf.JWT_SECRET)
+	contrl := controller.SetupRoutes(userrepo, envinf.JWT_SECRET, monitor)
 
 	contrl.Listen(":8080")
 }

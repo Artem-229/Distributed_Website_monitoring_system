@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 func CheckJWT(secret string) gin.HandlerFunc {
@@ -20,10 +20,10 @@ func CheckJWT(secret string) gin.HandlerFunc {
 			return
 		}
 
-		authorization = strings.TrimPrefix(authorization, "bearer ")
+		authorization = strings.TrimPrefix(authorization, "Bearer ")
 		j := jwt.MapClaims{}
-		err := jwt.ParseWithClaims(authorization, &j, func(word *jwt.Token) (interface{}, error) {
-			return []byte(word), nil
+		_, err := jwt.ParseWithClaims(authorization, &j, func(word *jwt.Token) (interface{}, error) {
+			return []byte(secret), nil
 		})
 		if err != nil {
 			c.AbortWithStatus(http.StatusUnauthorized)

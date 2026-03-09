@@ -7,33 +7,36 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type Controller struct {
-	g      *gin.Engine
-	repo   app.UserRepository
-	secret string
+	g       *gin.Engine
+	repo    app.UserRepository
+	secret  string
+	monitor app.MonitorRepository
 }
 
-func SetupRoutes(repo app.UserRepository, secret string) *Controller {
+func SetupRoutes(repo app.UserRepository, secret string, monitor app.MonitorRepository) *Controller {
 	controller := &Controller{
-		g:      gin.Default(),
-		repo:   repo,
-		secret: secret,
+		g:       gin.Default(),
+		repo:    repo,
+		secret:  secret,
+		monitor: monitor,
 	}
-
-	authorized := controller.g.Group("/api", middleware.CheckJWT(secret))
 
 	controller.g.Use(func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Content-Type")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return
 		}
 		c.Next()
 	})
+
+	authorized := controller.g.Group("/api", middleware.CheckJWT(secret))
 
 	controller.g.GET("/health", func(ctx *gin.Context) {
 		ctx.IndentedJSON(http.StatusOK, gin.H{
@@ -107,9 +110,99 @@ func SetupRoutes(repo app.UserRepository, secret string) *Controller {
 		}
 	})
 
-	authorized.POST("/monitors", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
+	authorized.GET("/monitors", func(c *gin.Context) {
+
+		UserIDraw, _ := c.Get("UserID")
+
+		UserID, ok := UserIDraw.(uuid.UUID)
+		if !ok {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{
+				"message": "something wrong with id",
+			})
+			return
+		}
+
+		ans, err := monitor.GetMonitors(UserID)
+		if !err {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{
+				"message": "problems with monitors parsing",
+			})
+			return
+		}
+
+		c.IndentedJSON(http.StatusOK, gin.H{
+			"message":  "accepted",
+			"monitors": ans,
+		})
+	})
+
+	authorized.POST("/addmonitor", func(c *gin.Context) {
+		var req models.Monitor
+		err := c.BindJSON(&req)
+		if err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{
+				"message": "problem with data",
+			})
+			return
+		}
+
+		req.Id = uuid.New()
+		UserIDRaw, _ := c.Get("UserID")
+		req.Users_id = UserIDRaw.(uuid.UUID)
+
+		ok, err := app.AddMonitor(req, monitor)
+		if err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{
+				"message": "problems with adding a monitor",
+			})
+			return
+
+		}
+		if ok {
+			c.IndentedJSON(http.StatusOK, gin.H{
+				"message": "monitor added succesfully",
+			})
+		} else {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{
+				"message": "internal server problems",
+			})
+		}
+
+	})
+
+	authorized.POST("/deletemonitor", func(c *gin.Context) {
+		var mon models.Monitor
+		err := c.BindJSON(&mon)
+
+		ok, err := app.DeleteMonitor(mon, monitor)
+		if err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{
+				"message": "error while loading the monitor",
+			})
+			return
+		}
+		if ok {
+			c.IndentedJSON(http.StatusOK, gin.H{
+				"message": "accepted",
+			})
+		}
+	})
+
+	authorized.POST("/getmonitor", func(c *gin.Context) {
+		UserIDRaw, _ := c.Get("UserID")
+		UserID := UserIDRaw.(uuid.UUID)
+
+		mon, err := monitor.GetMonitor(UserID)
+		if err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{
+				"message": "couldnt get the monitor",
+			})
+			return
+		}
+
+		c.IndentedJSON(http.StatusOK, gin.H{
 			"message": "accepted",
+			"monitor": mon,
 		})
 	})
 

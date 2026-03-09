@@ -41,6 +41,17 @@ async function apiRequest(url, options = {}) {
   return data;
 }
 
+async function apiGetMonitors() {
+  return apiRequest("/monitors");
+}
+
+async function apiAddMonitor(url, timeInterval) {
+  return apiRequest("/addmonitor", {
+    method: "POST",
+    body: JSON.stringify({ Url: url, Time_interval: timeInterval, Is_active: true }),
+  });
+}
+
 function Corners() {
   return (
     <>
@@ -201,11 +212,103 @@ function AuthPanel({ onSuccess }) {
   );
 }
 
+function AddMonitorForm({ onAdded }) {
+  const [url, setUrl] = useState("");
+  const [interval, setInterval] = useState(60);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async () => {
+    if (!url) { setError("URL REQUIRED"); return; }
+    setError(""); setLoading(true);
+    try {
+      await apiAddMonitor(url, interval);
+      setUrl("");
+      setInterval(60);
+      onAdded();
+    } catch (e) {
+      setError(e.message);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="card" style={{ marginBottom: "32px" }}>
+      <Corners />
+      <div className="card-label">ADD NEW MONITOR</div>
+      <div style={{ marginTop: "16px" }}>
+        <div className="field-group">
+          <label className="field-label">// TARGET URL</label>
+          <input
+            className="field-input"
+            value={url}
+            onChange={e => setUrl(e.target.value)}
+            placeholder="https://example.com"
+          />
+        </div>
+        <div className="field-group">
+          <label className="field-label">// CHECK INTERVAL (SEC)</label>
+          <input
+            className="field-input"
+            type="number"
+            value={interval}
+            onChange={e => setInterval(Number(e.target.value))}
+            placeholder="60"
+          />
+        </div>
+        <button className="btn-primary" onClick={handleSubmit} disabled={loading} style={{ marginTop: "12px" }}>
+          {loading ? "ADDING..." : "ADD MONITOR"}
+        </button>
+        {error && <div className="alert-error">⚠ {error}</div>}
+      </div>
+    </div>
+  );
+}
+
+function MonitorList({ monitors }) {
+  if (monitors.length === 0) {
+    return (
+      <div style={{ color: "var(--text-muted)", fontSize: "12px", letterSpacing: "2px" }}>
+        // NO MONITORS CONFIGURED
+      </div>
+    );
+  }
+
+  return (
+    <div className="cards">
+      {monitors.map((m, i) => (
+        <div key={i} className="card">
+          <Corners />
+          <div className="card-label">MONITOR</div>
+          <div className="card-value" style={{ fontSize: "14px", wordBreak: "break-all" }}>{m.Url}</div>
+          <div style={{ marginTop: "8px", fontSize: "10px", color: "var(--text-muted)", letterSpacing: "2px" }}>
+            INTERVAL: {m.Time_interval}s &nbsp;|&nbsp; {m.Is_active ? "ACTIVE" : "INACTIVE"}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Dashboard({ username, onLogout }) {
   const [time, setTime] = useState(new Date());
+  const [monitors, setMonitors] = useState([]);
+  const [loadingMonitors, setLoadingMonitors] = useState(true);
+
+  const fetchMonitors = async () => {
+    setLoadingMonitors(true);
+    try {
+      const data = await apiGetMonitors();
+      setMonitors(data.monitors || []);
+    } catch (e) {
+      setMonitors([]);
+    }
+    setLoadingMonitors(false);
+  };
 
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);
+    fetchMonitors();
     return () => clearInterval(t);
   }, []);
 
@@ -213,12 +316,6 @@ function Dashboard({ username, onLogout }) {
     localStorage.removeItem("token");
     onLogout();
   };
-
-  const cards = [
-    { label: "ACTIVE NODES", value: "—" },
-    { label: "UPTIME",       value: "—" },
-    { label: "ALERTS",       value: "—" },
-  ];
 
   return (
     <div className="dashboard">
@@ -237,17 +334,32 @@ function Dashboard({ username, onLogout }) {
 
       <div className="dash-content">
         <div className="dash-title">SYSTEM ONLINE</div>
-        <div className="dash-subtitle">// MONITORING DASHBOARD — AWAITING DATA STREAMS</div>
-        <div className="cards">
-          {cards.map((c, i) => (
-            <div key={i} className="card">
-              <Corners />
-              <div className="card-label">{c.label}</div>
-              <div className="card-value">{c.value}</div>
-            </div>
-          ))}
-        </div>
+        <div className="dash-subtitle">// MONITORING DASHBOARD</div>
+
+        <AddMonitorForm onAdded={fetchMonitors} />
+
+        <div className="dash-subtitle" style={{ marginBottom: "16px" }}>// ACTIVE MONITORS</div>
+        {loadingMonitors
+          ? <div style={{ color: "var(--text-muted)", fontSize: "12px", letterSpacing: "2px" }}>LOADING...</div>
+          : <MonitorList monitors={monitors} />
+        }
       </div>
+    </div>
+  );
+}
+
+export default function App() {
+  const [user, setUser] = useState(null);
+
+  if (user) {
+    return <Dashboard username={user} onLogout={() => setUser(null)} />;
+  }
+
+  return (
+    <div className="app-root">
+      <div className="bg-grid" />
+      <div className="scanline" />
+      <AuthPanel onSuccess={setUser} />
     </div>
   );
 }
