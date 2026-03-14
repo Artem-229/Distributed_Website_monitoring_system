@@ -9,7 +9,7 @@ import (
 )
 
 type ChecksRepository interface {
-	AddResultsMonitors(models.Results) error
+	AddResult(models.Results) error
 	GetChecks(id uuid.UUID) ([]models.Results, error)
 }
 
@@ -36,7 +36,7 @@ func CheckPing(monitor models.Monitor, repo ChecksRepository) (float64, bool, er
 		Responce_time: float64(end.Milliseconds()),
 	}
 
-	err = repo.AddResultsMonitors(res)
+	err = repo.AddResult(res)
 
 	if err != nil {
 		return float64(end.Milliseconds()), true, err

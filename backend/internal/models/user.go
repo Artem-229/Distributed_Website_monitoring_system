@@ -14,13 +14,13 @@ type User struct {
 	Created_at    time.Time
 }
 
-type Registration_Request struct {
+type RegistrationRequest struct {
 	Username string
 	Login    string
 	Password string
 }
 
-type Login_Request struct {
+type LoginRequest struct {
 	Login    string
 	Password string
 }

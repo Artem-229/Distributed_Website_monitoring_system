@@ -4,6 +4,7 @@ import (
 	"Distributed_Website_monitoring_system/internal/adapters/postgres"
 	"Distributed_Website_monitoring_system/internal/app"
 	"Distributed_Website_monitoring_system/internal/controller"
+	"Distributed_Website_monitoring_system/internal/handlers"
 	"fmt"
 	"time"
 
@@ -24,9 +25,10 @@ func main() {
 
 	envinf := app.MustGetFromEnv()
 
+	secret := envinf.JWT_SECRET
+
 	connstr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		envinf.DB_USERNAME, envinf.DB_PASSWORD, envinf.DB_HOST, envinf.DB_PORT, envinf.DB_NAME)
-
 	m, err := migrate.New("file:///app/migrations", connstr)
 
 	if err != nil {
@@ -53,6 +55,10 @@ func main() {
 
 	conn := postgres.MustConnectToDb(cfg)
 
+	userrepo := &postgres.UserRepo{
+		DB: conn,
+	}
+
 	monitorrepo := &postgres.MonitorRepo{
 		DB: conn,
 	}
@@ -61,9 +67,10 @@ func main() {
 		DB: conn,
 	}
 
-	userrepo := &postgres.UserRepo{
-		DB: conn,
-	}
+	authHandler := handlers.NewAuthHandler(userrepo, secret)
+	monitorHandler := handlers.NewMonitorHandler(monitorrepo)
+	checkHandler := handlers.NewCheckHandler(checksrepo)
+	healthHandler := &handlers.HealthHandler{}
 
 	go func() {
 		for {
@@ -78,7 +85,8 @@ func main() {
 			time.Sleep(30 * time.Second)
 		}
 	}()
-	contrl := controller.SetupRoutes(userrepo, envinf.JWT_SECRET, monitorrepo, checksrepo)
+
+	contrl := controller.SetupRoutes(authHandler, monitorHandler, checkHandler, healthHandler, secret)
 
 	contrl.Listen(":8080")
 }

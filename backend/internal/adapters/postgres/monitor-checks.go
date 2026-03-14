@@ -11,7 +11,7 @@ type ChecksRepo struct {
 	DB *sql.DB
 }
 
-func (r *ChecksRepo) AddResultsMonitors(result models.Results) error {
+func (r *ChecksRepo) AddResult(result models.Results) error {
 	query := `INSERT INTO monitor_checks (id, monitor_id, time_interval, responce_time, checked_at, status_ok) VALUES ($1, $2, $3, $4, NOW(), $5)`
 	_, err := r.DB.Exec(query, result.Id, result.Monitor_id, result.Time_Interval, result.Responce_time, result.Status_ok)
 	if err != nil {
