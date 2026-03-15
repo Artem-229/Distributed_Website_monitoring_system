@@ -1,4 +1,4 @@
-package handlers
+package kafkahandler
 
 import (
 	"Distributed_Website_monitoring_system/internal/models"
@@ -25,7 +25,7 @@ func (A *AlertHandler) HandleMessage(msg []byte, offset kafka.Offset) error {
 		logrus.Error("ALERT: site is unavaliable")
 	}
 
-	if checkEvent.ResponseTime > 1000 {
+	if checkEvent.ResponseTime > 700 {
 		logrus.Error("ALERT: the connection is unstable")
 	}
 

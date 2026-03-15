@@ -5,6 +5,8 @@ import (
 	"Distributed_Website_monitoring_system/internal/app"
 	"Distributed_Website_monitoring_system/internal/controller"
 	"Distributed_Website_monitoring_system/internal/handlers"
+	"Distributed_Website_monitoring_system/internal/kafka/consumer"
+	kafkahandler "Distributed_Website_monitoring_system/internal/kafka/handlers"
 	"Distributed_Website_monitoring_system/internal/kafka/producer"
 	"fmt"
 	"time"
@@ -72,11 +74,20 @@ func main() {
 	monitorHandler := handlers.NewMonitorHandler(monitorrepo)
 	checkHandler := handlers.NewCheckHandler(checksrepo)
 	healthHandler := &handlers.HealthHandler{}
+	alertHandler := &kafkahandler.AlertHandler{}
 
 	producer, err := producer.NewProducer(envinf.KAFKA_ADDRESS)
 	if err != nil {
-		fmt.Println("Kafka error", err)
+		fmt.Println("Kafka producion error", err)
 	}
+	consumer, err := consumer.NewConsumer(envinf.KAFKA_ADDRESS, "monitor.results", "new-group", alertHandler)
+	if err != nil {
+		fmt.Println("Kafka consumption error", err)
+	}
+
+	go func() {
+		consumer.Start()
+	}()
 
 	go func() {
 		for {
