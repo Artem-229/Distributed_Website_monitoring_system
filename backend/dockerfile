@@ -1,4 +1,4 @@
-FROM golang:1.25-alpine AS go-builder
+FROM golang:1.25 AS go-builder
 
 WORKDIR /app
 
@@ -7,12 +7,14 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o main ./cmd/main.go
+RUN apt-get update && apt-get install -y gcc ca-certificates
+RUN CGO_ENABLED=1 go build -o main ./cmd/main.go
 
-
-FROM alpine:3.19 AS production
+FROM debian:bookworm-slim AS production
 
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 
 COPY --from=go-builder /app/main /app/main
 COPY --from=go-builder /app/migrations /app/migrations

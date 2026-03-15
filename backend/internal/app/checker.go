@@ -1,7 +1,9 @@
 package app
 
 import (
+	"Distributed_Website_monitoring_system/internal/kafka/producer"
 	"Distributed_Website_monitoring_system/internal/models"
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -13,7 +15,7 @@ type ChecksRepository interface {
 	GetChecks(id uuid.UUID) ([]models.Results, error)
 }
 
-func CheckPing(monitor models.Monitor, repo ChecksRepository) (float64, bool, error) {
+func CheckPing(monitor models.Monitor, repo ChecksRepository, producer *producer.Producer) (float64, bool, error) {
 
 	start := time.Now()
 
@@ -37,6 +39,20 @@ func CheckPing(monitor models.Monitor, repo ChecksRepository) (float64, bool, er
 	}
 
 	err = repo.AddResult(res)
+
+	if err != nil {
+		return float64(end.Milliseconds()), true, err
+	}
+
+	checkEvent := models.CheckEvent{
+		MonitorID:    monitor.Id.String(),
+		Url:          monitor.Url,
+		Status_ok:    true,
+		ResponseTime: float64(end.Milliseconds()),
+	}
+
+	data, _ := json.Marshal(checkEvent)
+	producer.Produce(string(data), "monitor.results")
 
 	if err != nil {
 		return float64(end.Milliseconds()), true, err

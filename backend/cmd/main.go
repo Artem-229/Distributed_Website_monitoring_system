@@ -5,6 +5,7 @@ import (
 	"Distributed_Website_monitoring_system/internal/app"
 	"Distributed_Website_monitoring_system/internal/controller"
 	"Distributed_Website_monitoring_system/internal/handlers"
+	"Distributed_Website_monitoring_system/internal/kafka/producer"
 	"fmt"
 	"time"
 
@@ -72,13 +73,18 @@ func main() {
 	checkHandler := handlers.NewCheckHandler(checksrepo)
 	healthHandler := &handlers.HealthHandler{}
 
+	producer, err := producer.NewProducer(envinf.KAFKA_ADDRESS)
+	if err != nil {
+		fmt.Println("Kafka error", err)
+	}
+
 	go func() {
 		for {
 			arr, err := monitorrepo.GetAllMonitors()
 			fmt.Println("WORKER: monitors count:", len(arr), "err:", err)
 			if err == nil {
 				for _, k := range arr {
-					_, _, err := app.CheckPing(k, checksrepo)
+					_, _, err := app.CheckPing(k, checksrepo, producer)
 					fmt.Println("WORKER: checked", k.Url, "err:", err)
 				}
 			}

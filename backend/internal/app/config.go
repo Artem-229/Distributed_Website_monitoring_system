@@ -5,13 +5,14 @@ import (
 )
 
 type Config struct {
-	PORT        string `env:"PORT"`
-	DB_PORT     string `env:"DB_PORT"`
-	DB_HOST     string `env:"DB_HOST"`
-	DB_USERNAME string `env:"DB_USERNAME"`
-	DB_PASSWORD string `env:"DB_PASSWORD"`
-	DB_NAME     string `env:"DB_NAME"`
-	JWT_SECRET  string `env:"JWT_SECRET"`
+	PORT          string   `env:"PORT"`
+	DB_PORT       string   `env:"DB_PORT"`
+	DB_HOST       string   `env:"DB_HOST"`
+	DB_USERNAME   string   `env:"DB_USERNAME"`
+	DB_PASSWORD   string   `env:"DB_PASSWORD"`
+	DB_NAME       string   `env:"DB_NAME"`
+	JWT_SECRET    string   `env:"JWT_SECRET"`
+	KAFKA_ADDRESS []string `env:"KAFKA_ADDRESS"`
 }
 
 func MustGetFromEnv() Config {
