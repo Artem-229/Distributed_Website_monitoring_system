@@ -3,7 +3,8 @@ CREATE TABLE users (
     username VARCHAR(255) NOT NULL,
     login VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+    telegram_id BIGINT DEFAULT NULL
 );
 
 CREATE TABLE monitors (
@@ -22,4 +23,13 @@ CREATE TABLE monitor_checks (
     responce_time FLOAT NOT NULL,
     checked_at TIMESTAMP NOT NULL DEFAULT NOW(),
     status_ok BOOLEAN NOT NULL
+);
+
+CREATE TABLE alerts (
+    id UUID PRIMARY KEY,
+    monitor_id UUID NOT NULL,
+    url TEXT NOT NULL,
+    response_time FLOAT NOT NULL,
+    alert_type TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );

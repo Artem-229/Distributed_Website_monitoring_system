@@ -12,6 +12,8 @@ require (
 	golang.org/x/crypto v0.48.0
 )
 
+require github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1 // indirect
+
 require (
 	github.com/bytedance/sonic v1.14.0 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect

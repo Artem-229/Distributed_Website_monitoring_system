@@ -13,6 +13,7 @@ type Config struct {
 	DB_NAME       string   `env:"DB_NAME"`
 	JWT_SECRET    string   `env:"JWT_SECRET"`
 	KAFKA_ADDRESS []string `env:"KAFKA_ADDRESS"`
+	TELEGRAM_BOT  string   `env:"TELEGRAM_BOT"`
 }
 
 func MustGetFromEnv() Config {

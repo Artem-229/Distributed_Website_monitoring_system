@@ -8,6 +8,7 @@ import (
 	"Distributed_Website_monitoring_system/internal/kafka/consumer"
 	kafkahandler "Distributed_Website_monitoring_system/internal/kafka/handlers"
 	"Distributed_Website_monitoring_system/internal/kafka/producer"
+	"Distributed_Website_monitoring_system/internal/telegram"
 	"fmt"
 	"time"
 
@@ -70,11 +71,19 @@ func main() {
 		DB: conn,
 	}
 
+	telegramrepo := &postgres.TelegramRepo{
+		DB: conn,
+	}
+
+	bot := telegram.NewBot(envinf.TELEGRAM_BOT, userrepo, telegramrepo, monitorrepo)
+
+	go telegram.BotHandle(bot)
+
 	authHandler := handlers.NewAuthHandler(userrepo, secret)
 	monitorHandler := handlers.NewMonitorHandler(monitorrepo)
 	checkHandler := handlers.NewCheckHandler(checksrepo)
 	healthHandler := &handlers.HealthHandler{}
-	alertHandler := &kafkahandler.AlertHandler{}
+	alertHandler := kafkahandler.NewAlertHandler(telegramrepo)
 
 	producer, err := producer.NewProducer(envinf.KAFKA_ADDRESS)
 	if err != nil {

@@ -9,6 +9,7 @@ import (
 type UserRepository interface {
 	GetByLogin(login string) (models.User, error)
 	Create(user models.User) error
+	GetByTelegramID(id int64) (models.User, error)
 }
 
 func LoginUser(req models.LoginRequest, repo UserRepository, secret string) (bool, string, error) {
