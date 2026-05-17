@@ -1,0 +1,9 @@
+.gradle/
+app/build/
+local.properties
+.idea/caches/
+.idea/workspace.xml
+.idea/deploymentTargetSelector.xml
+.idea/deviceManager.xml
+{app/
+README.md
