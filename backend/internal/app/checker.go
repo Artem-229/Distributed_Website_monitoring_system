@@ -13,60 +13,50 @@ import (
 type ChecksRepository interface {
 	AddResult(models.Results) error
 	GetChecks(id uuid.UUID) ([]models.Results, error)
+	GetChecksByRegion(id uuid.UUID) (map[string][]models.Results, error)
 }
 
-func CheckPing(monitor models.Monitor, repo ChecksRepository, producer *producer.Producer) (float64, bool, error) {
+var httpClient = &http.Client{Timeout: 10 * time.Second}
 
+func Ping(url string) (float64, bool, error) {
 	start := time.Now()
+	resp, err := httpClient.Get(url)
+	elapsed := time.Since(start)
 
-	req, err := http.Get(monitor.Url)
-	if err != nil {
-		return 0, false, err
+	statusOk := err == nil && resp != nil && resp.StatusCode < 500
+	if resp != nil {
+		resp.Body.Close()
 	}
-	if req.StatusCode >= 500 {
-		return 0, true, err
-	}
+	return float64(elapsed.Milliseconds()), statusOk, err
+}
 
-	end := time.Since(start)
-
+func SaveCheck(monitor models.Monitor, repo ChecksRepository, region string, responseTime float64, statusOk bool) error {
 	res := models.Results{
 		Id:            uuid.New(),
 		Monitor_id:    monitor.Id,
 		Time_Interval: monitor.Time_interval,
-		Checked_at:    start,
-		Status_ok:     true,
-		Responce_time: float64(end.Milliseconds()),
+		Checked_at:    time.Now(),
+		Status_ok:     statusOk,
+		Responce_time: responseTime,
+		Region:        region,
 	}
+	return repo.AddResult(res)
+}
 
-	err = repo.AddResult(res)
-
-	if err != nil {
-		return float64(end.Milliseconds()), true, err
+func SendKafkaEvent(prod *producer.Producer, monitor models.Monitor, responseTime float64, statusOk bool) error {
+	if prod == nil {
+		return nil
 	}
-
 	checkEvent := models.CheckEvent{
 		MonitorID:    monitor.Id.String(),
 		Url:          monitor.Url,
-		Status_ok:    true,
-		ResponseTime: float64(end.Milliseconds()),
+		Status_ok:    statusOk,
+		ResponseTime: responseTime,
 	}
-
 	data, _ := json.Marshal(checkEvent)
-	producer.Produce(string(data), "monitor.results")
-
-	if err != nil {
-		return float64(end.Milliseconds()), true, err
-	}
-
-	return float64(end.Milliseconds()), true, nil
-
+	return prod.Produce(string(data), "monitor.results")
 }
 
 func GetChecks(id uuid.UUID, repo ChecksRepository) ([]models.Results, error) {
-	res, err := repo.GetChecks(id)
-	if err != nil {
-		return res, err
-	}
-
-	return res, nil
+	return repo.GetChecks(id)
 }

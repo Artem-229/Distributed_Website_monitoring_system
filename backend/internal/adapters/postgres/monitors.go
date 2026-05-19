@@ -81,7 +81,7 @@ func (r *MonitorRepo) GetMonitor(id uuid.UUID) (models.Monitor, error) {
 	var req models.Monitor
 	mon := r.DB.QueryRow(query, id)
 
-	err := mon.Scan(&req.Id, &req.Url, &req.Time_interval, &req.Is_active, &req.Created_at)
+	err := mon.Scan(&req.Id, &req.Users_id, &req.Url, &req.Time_interval, &req.Is_active, &req.Created_at)
 	if err != nil {
 		return req, err
 	}
@@ -99,6 +99,7 @@ func (r *MonitorRepo) GetAllMonitors() ([]models.Monitor, error) {
 	if err != nil {
 		return monitors, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var ans models.Monitor

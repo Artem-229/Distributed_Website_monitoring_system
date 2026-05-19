@@ -20,7 +20,7 @@ func LoginUser(req models.LoginRequest, repo UserRepository, secret string) (boo
 	if CheckPasswordHash(val.Password_Hash, req.Password) {
 		token, err := GenerateJWTToken(val.ID, secret)
 		if err != nil {
-			return true, "", nil
+			return false, "", err
 		}
 		return true, token, nil
 	}

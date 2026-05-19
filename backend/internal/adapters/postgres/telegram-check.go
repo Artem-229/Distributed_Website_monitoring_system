@@ -20,7 +20,6 @@ func (t *TelegramRepo) AddAlert(alert models.Alert) error {
 		alert.Url,
 		alert.Response_time,
 		alert.Alert_type,
-		alert.Created_at,
 	)
 
 	if err != nil {

@@ -5,12 +5,11 @@ import (
 	"Distributed_Website_monitoring_system/internal/app"
 	"Distributed_Website_monitoring_system/internal/controller"
 	"Distributed_Website_monitoring_system/internal/handlers"
-	"Distributed_Website_monitoring_system/internal/kafka/consumer"
-	kafkahandler "Distributed_Website_monitoring_system/internal/kafka/handlers"
+	//kafkahandler "Distributed_Website_monitoring_system/internal/kafka/handlers"
 	"Distributed_Website_monitoring_system/internal/kafka/producer"
-	"Distributed_Website_monitoring_system/internal/telegram"
+	//"Distributed_Website_monitoring_system/internal/telegram"
+	"Distributed_Website_monitoring_system/internal/worker"
 	"fmt"
-	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -71,46 +70,35 @@ func main() {
 		DB: conn,
 	}
 
-	telegramrepo := &postgres.TelegramRepo{
-		DB: conn,
-	}
+	//telegramrepo := &postgres.TelegramRepo{
+	//	DB: conn,
+	//}
 
-	bot := telegram.NewBot(envinf.TELEGRAM_BOT, userrepo, telegramrepo, monitorrepo)
+	//bot := telegram.NewBot(envinf.TELEGRAM_BOT, userrepo, telegramrepo, monitorrepo)
 
-	go telegram.BotHandle(bot)
+	//go telegram.BotHandle(bot)
 
 	authHandler := handlers.NewAuthHandler(userrepo, secret)
 	monitorHandler := handlers.NewMonitorHandler(monitorrepo)
 	checkHandler := handlers.NewCheckHandler(checksrepo)
 	healthHandler := &handlers.HealthHandler{}
-	alertHandler := kafkahandler.NewAlertHandler(telegramrepo)
+	//alertHandler := kafkahandler.NewAlertHandler(telegramrepo)
 
 	producer, err := producer.NewProducer(envinf.KAFKA_ADDRESS)
 	if err != nil {
 		fmt.Println("Kafka producion error", err)
 	}
-	consumer, err := consumer.NewConsumer(envinf.KAFKA_ADDRESS, "monitor.results", "new-group", alertHandler)
-	if err != nil {
-		fmt.Println("Kafka consumption error", err)
-	}
+	//consumer, err := consumer.NewConsumer(envinf.KAFKA_ADDRESS, "monitor.results", "new-group", alertHandler)
+	//if err != nil {
+	//	fmt.Println("Kafka consumption error", err)
+	//}
 
-	go func() {
-		consumer.Start()
-	}()
+	//go func() {
+	//	consumer.Start()
+	//}()
 
-	go func() {
-		for {
-			arr, err := monitorrepo.GetAllMonitors()
-			fmt.Println("WORKER: monitors count:", len(arr), "err:", err)
-			if err == nil {
-				for _, k := range arr {
-					_, _, err := app.CheckPing(k, checksrepo, producer)
-					fmt.Println("WORKER: checked", k.Url, "err:", err)
-				}
-			}
-			time.Sleep(30 * time.Second)
-		}
-	}()
+	scheduler := worker.NewScheduler(monitorrepo, checksrepo, producer, 5)
+	scheduler.Start()
 
 	contrl := controller.SetupRoutes(authHandler, monitorHandler, checkHandler, healthHandler, secret)
 

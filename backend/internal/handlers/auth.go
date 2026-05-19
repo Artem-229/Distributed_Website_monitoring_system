@@ -28,12 +28,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 	val, token, err := app.LoginUser(req, h.repo, h.secret)
 	if err != nil {
-		if token == "" {
-			c.IndentedJSON(http.StatusConflict, gin.H{
-				"message": "problems with token generating",
-			})
-			return
-		}
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{
 			"message": "problem with server",
 		})

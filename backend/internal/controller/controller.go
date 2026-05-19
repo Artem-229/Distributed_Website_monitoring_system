@@ -32,10 +32,11 @@ func SetupRoutes(auth *handlers.AuthHandler, monitor *handlers.MonitorHandler, c
 	controller.g.POST("/registration", auth.Registration)
 	controller.g.POST("/login", auth.Login)
 	authorized.GET("/monitors", monitor.GetMonitors)
+	authorized.GET("/getmonitor", monitor.GetMonitor)
 	authorized.POST("/addmonitor", monitor.AddMonitor)
 	authorized.POST("/deletemonitor", monitor.DeleteMonitor)
-	authorized.POST("/getmonitor", monitor.GetMonitor)
-	authorized.POST("/checks/:monitor_id", check.Check)
+	authorized.GET("/checks/:monitor_id", check.Check)
+	authorized.GET("/checks/:monitor_id/regions", check.ChecksByRegion)
 
 	return controller
 }

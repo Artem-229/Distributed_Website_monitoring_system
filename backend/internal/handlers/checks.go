@@ -19,17 +19,39 @@ func NewCheckHandler(checkrepo app.ChecksRepository) *CheckHandler {
 }
 
 func (h *CheckHandler) Check(c *gin.Context) {
-	rowid := c.Param("monitor_id")
-	id, _ := uuid.Parse(rowid)
+	id, err := uuid.Parse(c.Param("monitor_id"))
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "invalid monitor_id"})
+		return
+	}
+
 	req, err := h.checkrepo.GetChecks(id)
 	if err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, gin.H{
-			"message": "problem with data loading",
-		})
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "problem with data loading"})
+		return
 	}
 
 	c.IndentedJSON(http.StatusOK, gin.H{
 		"message":  "accepted",
 		"monitors": req,
+	})
+}
+
+func (h *CheckHandler) ChecksByRegion(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("monitor_id"))
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "invalid monitor_id"})
+		return
+	}
+
+	req, err := h.checkrepo.GetChecksByRegion(id)
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "problem with data loading"})
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{
+		"message": "accepted",
+		"regions": req,
 	})
 }

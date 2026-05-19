@@ -82,6 +82,12 @@ func (m *MonitorHandler) AddMonitor(c *gin.Context) {
 func (m *MonitorHandler) DeleteMonitor(c *gin.Context) {
 	var mon models.Monitor
 	err := c.BindJSON(&mon)
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{
+			"message": "problem with data",
+		})
+		return
+	}
 
 	ok, err := app.DeleteMonitor(mon.Id, m.monitorrepo)
 	if err != nil {
@@ -98,11 +104,15 @@ func (m *MonitorHandler) DeleteMonitor(c *gin.Context) {
 }
 
 func (m *MonitorHandler) GetMonitor(c *gin.Context) {
-	UserIDRaw, _ := c.Get("UserID")
-	UserIDstring := UserIDRaw.(string)
-	UserID, _ := uuid.Parse(UserIDstring)
+	monitorID, err := uuid.Parse(c.Query("monitor_id"))
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{
+			"message": "invalid monitor_id",
+		})
+		return
+	}
 
-	mon, err := m.monitorrepo.GetMonitor(UserID)
+	mon, err := m.monitorrepo.GetMonitor(monitorID)
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{
 			"message": "couldnt get the monitor",

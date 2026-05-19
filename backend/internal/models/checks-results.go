@@ -13,4 +13,5 @@ type Results struct {
 	Checked_at    time.Time
 	Responce_time float64
 	Status_ok     bool
+	Region        string
 }
