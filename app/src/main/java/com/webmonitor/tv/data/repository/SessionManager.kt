@@ -22,10 +22,6 @@ class SessionManager(private val context: Context) {
         prefs[TOKEN_KEY]
     }
 
-    val usernameFlow: Flow<String?> = context.dataStore.data.map { prefs ->
-        prefs[USERNAME_KEY]
-    }
-
     suspend fun saveSession(token: String, username: String = "") {
         context.dataStore.edit { prefs ->
             prefs[TOKEN_KEY] = token

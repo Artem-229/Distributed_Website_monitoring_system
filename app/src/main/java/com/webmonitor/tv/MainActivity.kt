@@ -6,7 +6,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowCompat
 import com.webmonitor.tv.data.models.Monitor
 import com.webmonitor.tv.ui.screens.ChecksScreen

@@ -95,7 +95,20 @@ class MonitorRepository(private val api: ApiService) {
             if (response.isSuccessful) {
                 Result.Success(response.body()?.checks ?: emptyList())
             } else {
-                Result.Error("Не удалось загрузить историю проверок")
+                Result.Error("Ошибка ${response.code()} при загрузке истории")
+            }
+        } catch (e: Exception) {
+            Result.Error("Ошибка подключения: ${e.localizedMessage}")
+        }
+    }
+
+    suspend fun getRegions(token: String, monitorId: String): Result<Map<String, List<RegionCheck>>> {
+        return try {
+            val response = api.getRegions(bearerToken(token), monitorId)
+            if (response.isSuccessful) {
+                Result.Success(response.body()?.regions ?: emptyMap())
+            } else {
+                Result.Error("Не удалось загрузить региональные данные")
             }
         } catch (e: Exception) {
             Result.Error("Ошибка подключения: ${e.localizedMessage}")

@@ -14,9 +14,6 @@ interface ApiService {
     @POST("registration")
     suspend fun register(@Body request: RegistrationRequest): Response<GenericResponse>
 
-    @GET("health")
-    suspend fun health(): Response<GenericResponse>
-
     // ─── Monitors (JWT required → passed via header) ─────────────────────────
 
     @GET("api/monitors")
@@ -38,9 +35,15 @@ interface ApiService {
 
     // ─── Checks ──────────────────────────────────────────────────────────────
 
-    @POST("api/checks/{monitor_id}")
+    @GET("api/checks/{monitor_id}")
     suspend fun getChecks(
         @Header("Authorization") token: String,
         @Path("monitor_id") monitorId: String
     ): Response<ChecksResponse>
+
+    @GET("api/checks/{monitor_id}/regions")
+    suspend fun getRegions(
+        @Header("Authorization") token: String,
+        @Path("monitor_id") monitorId: String
+    ): Response<RegionsResponse>
 }

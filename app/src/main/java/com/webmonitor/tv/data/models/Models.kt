@@ -66,3 +66,19 @@ data class ChecksResponse(
     @SerializedName("message") val message: String,
     @SerializedName("monitors") val checks: List<CheckResult>?          // backend returns key "monitors" for checks too
 )
+
+// ─── Regions ──────────────────────────────────────────────────────────────────
+
+data class RegionCheck(
+    @SerializedName("Id") val id: String = "",
+    @SerializedName("Monitor_id") val monitorId: String = "",
+    @SerializedName("Responce_time") val responseTime: Double = 0.0,   // typo in backend kept intentionally
+    @SerializedName("Status_ok") val statusOk: Boolean = false,
+    @SerializedName("Checked_at") val checkedAt: String = "",
+    @SerializedName("Region") val region: String = ""
+)
+
+data class RegionsResponse(
+    @SerializedName("message") val message: String,
+    @SerializedName("regions") val regions: Map<String, List<RegionCheck>>
+)

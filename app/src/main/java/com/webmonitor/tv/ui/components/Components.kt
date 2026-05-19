@@ -207,32 +207,6 @@ fun StatChip(label: String, value: String, color: Color = AccentCyan) {
     }
 }
 
-// ─── Section header ──────────────────────────────────────────────────────────
-
-@Composable
-fun SectionHeader(title: String, icon: ImageVector, modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        Icon(icon, contentDescription = null, tint = AccentBlue, modifier = Modifier.size(22.dp))
-        Text(
-            title,
-            color = TextPrimary,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 0.5.sp
-        )
-        Spacer(Modifier.weight(1f))
-        HorizontalDivider(
-            modifier = Modifier.weight(2f),
-            color = NavyBorder,
-            thickness = 1.dp
-        )
-    }
-}
-
 // ─── Error snackbar ───────────────────────────────────────────────────────────
 
 @Composable

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.webmonitor.tv.data.api.RetrofitClient
 import com.webmonitor.tv.data.models.CheckResult
 import com.webmonitor.tv.data.models.Monitor
+import com.webmonitor.tv.data.models.RegionCheck
 import com.webmonitor.tv.data.repository.MonitorRepository
 import com.webmonitor.tv.data.repository.Result
 import com.webmonitor.tv.data.repository.SessionManager
@@ -33,6 +34,12 @@ data class ChecksUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val selectedMonitor: Monitor? = null
+)
+
+data class RegionsUiState(
+    val regions: Map<String, List<RegionCheck>> = emptyMap(),
+    val isLoading: Boolean = false,
+    val error: String? = null
 )
 
 // ─── ViewModel ───────────────────────────────────────────────────────────────
@@ -76,25 +83,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _authState.value = AuthState.Loading
             when (val result = repository.register(username, login, password)) {
                 is Result.Success -> {
-                    // auto-login after registration
-                    loginAfterRegister(login, password)
+                    when (val loginResult = repository.login(login, password)) {
+                        is Result.Success -> {
+                            session.saveSession(loginResult.data.token ?: "", login)
+                            _authState.value = AuthState.Success
+                            loadMonitors()
+                        }
+                        is Result.Error -> _authState.value = AuthState.Error(loginResult.message)
+                    }
                 }
                 is Result.Error -> {
                     _authState.value = AuthState.Error(result.message)
                 }
-            }
-        }
-    }
-
-    private fun loginAfterRegister(login: String, password: String) {
-        viewModelScope.launch {
-            when (val result = repository.login(login, password)) {
-                is Result.Success -> {
-                    session.saveSession(result.data.token ?: "", login)
-                    _authState.value = AuthState.Success
-                    loadMonitors()
-                }
-                is Result.Error -> _authState.value = AuthState.Error(result.message)
             }
         }
     }
@@ -195,5 +195,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun clearChecks() {
         _checksState.value = ChecksUiState()
+    }
+
+    // ── Regions ──────────────────────────────────────────────────────────────
+
+    private val _regionsState = MutableStateFlow(RegionsUiState())
+    val regionsState: StateFlow<RegionsUiState> = _regionsState.asStateFlow()
+
+    fun loadRegions(monitorId: String) {
+        val tkn = token.value ?: return
+        viewModelScope.launch {
+            _regionsState.value = RegionsUiState(isLoading = true)
+            when (val result = repository.getRegions(tkn, monitorId)) {
+                is Result.Success -> _regionsState.value = RegionsUiState(regions = result.data)
+                is Result.Error -> _regionsState.value = RegionsUiState(error = result.message)
+            }
+        }
+    }
+
+    fun clearRegions() {
+        _regionsState.value = RegionsUiState()
     }
 }
