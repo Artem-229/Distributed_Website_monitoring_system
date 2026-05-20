@@ -1,38 +1,108 @@
 # Distributed Website Monitoring System
-
-Приложение для мониторинга доступности сайтов. Написано на Go + React(пока что).
-
+ 
+Система мониторинга доступности и скорости отклика веб-сайтов. Серверная часть написана на Go с Apache Kafka и PostgreSQL. Клиент - приложение для Android TV на Kotlin + Jetpack Compose с поддержкой навигации через пульт (D-pad) и отображением данных по 5 регионам.
+ 
 ## Stack
-
-**Backend:** Go, Gin, PostgreSQL, golang-migrate  
-**Frontend:** React, Vite
-
-## Запуск проекта:
-
-### Клонировать репозиторий
-
-```bash
-git clone 
-cd 
+ 
+**Backend:** Go, PostgreSQL, Apache Kafka (KRaft), golang-migrate, Docker  
+**Android TV client:** Kotlin, Jetpack Compose, Retrofit, OkHttp, Gson, StateFlow
+ 
+## Структура репозитория
+ 
 ```
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
+master
+├── backend/     - Go-сервер, Kafka, PostgreSQL, Docker Compose
+└── frontend/    - React (устаревшая версия, не используется)
+ 
+branch: frontend — Android TV приложение на Kotlin
 ```
-
-Запускается на `http://localhost:5173`
-
-### Backend
-
+ 
+---
+ 
+## Запуск backend (ветка master)
+ 
+Требования: [Docker](https://docs.docker.com/get-docker/) и Docker Compose.
+ 
 ```bash
-cd backend
+git clone -b master https://github.com/<your-username>/<repo-name>.git
+cd <repo-name>/backend
 docker compose up --build
 ```
-
-Запускается на `http://localhost:8080`
-
-> Перед запуском backend убедитесь что у вас запущен докер
+ 
+Сервер поднимется на `http://localhost:8080`
+ 
+Docker Compose автоматически запустит:
+- PostgreSQL и применит миграции через golang-migrate
+- Apache Kafka в режиме KRaft (без ZooKeeper)
+- Go-приложение
+> Первый запуск займёт чуть больше времени — Docker скачивает образы и собирает бинарник Go.
+ 
+### Проверить, что всё работает
+ 
+```bash
+# Регистрация
+curl -X POST http://localhost:8080/registration \
+  -H "Content-Type: application/json" \
+  -d '{"Username":"test","Login":"test@test.com","Password":"secret"}'
+ 
+# Вход и получение токена
+curl -X POST http://localhost:8080/login \
+  -H "Content-Type: application/json" \
+  -d '{"Login":"test@test.com","Password":"secret"}'
+```
+ 
+---
+ 
+## Запуск Android TV клиента (ветка frontend)
+ 
+Требования: [Android Studio](https://developer.android.com/studio) (Hedgehog или новее), Android SDK 34.
+ 
+```bash
+git clone -b frontend https://github.com/<your-username>/<repo-name>.git
+```
+ 
+1. Открыть папку проекта в Android Studio: **File → Open**
+2. Дождаться завершения Gradle sync
+3. В `app/src/main/java/com/webmonitor/tv/data/api/RetrofitClient.kt` указать IP-адрес машины с запущенным backend вместо `localhost` (эмулятор и реальное устройство не видят `localhost` хоста напрямую)
+4. Подключить Android TV устройство или запустить AVD с образом Android TV: **Device Manager → Create Device → TV**
+5. Нажать **Run**
+> На реальном Android TV-устройстве включить отладку по USB: **Настройки → Об устройстве → Сборка** (нажать 7 раз) → **Параметры разработчика → Отладка по USB**.
+ 
+---
+ 
+## API
+ 
+| Метод | Путь | Описание | Auth |
+|-------|------|----------|------|
+| POST | `/registration` | Регистрация | — |
+| POST | `/login` | Вход, возвращает JWT | — |
+| GET | `/api/monitors` | Список мониторов | JWT |
+| POST | `/api/addmonitor` | Добавить монитор | JWT |
+| POST | `/api/deletemonitor` | Удалить монитор | JWT |
+| GET | `/api/checks/{id}` | История проверок | JWT |
+| GET | `/api/checks/{id}/regions` | Данные по 5 регионам | JWT |
+ 
+JWT передаётся в заголовке: `Authorization: Bearer <token>`
+ 
+---
+ 
+## Как это работает
+ 
+```
+Android TV client
+      │  HTTP + JWT
+      ▼
+  Go REST API
+      │
+      ├── PostgreSQL — хранит пользователей, мониторы, результаты, алерты
+      │
+      └── Worker (горутины)
+              │  публикует событие после каждой проверки
+              ▼
+           Kafka topic: monitor.results
+              │
+              ▼
+           Consumer — создаёт алерты при DOWN или latency > 700ms
+```
+ 
+Воркер опрашивает активные мониторы с заданным интервалом (30 сек / 1 мин / 5 мин / 15 мин / 1 час), измеряет время отклика и сохраняет результат. Клиент Android TV отображает историю проверок и сводку по 5 географическим регионам: Россия, США, Китай, Центральная Европа, Азиатско-Тихоокеанский регион.
