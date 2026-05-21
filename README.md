@@ -24,8 +24,8 @@ branch: frontend — Android TV приложение на Kotlin
 Требования: [Docker](https://docs.docker.com/get-docker/) и Docker Compose.
  
 ```bash
-git clone -b master https://github.com/<your-username>/<repo-name>.git
-cd <repo-name>/backend
+git clone
+cd backend
 docker compose up --build
 ```
  
@@ -37,28 +37,12 @@ Docker Compose автоматически запустит:
 - Go-приложение
 > Первый запуск займёт чуть больше времени — Docker скачивает образы и собирает бинарник Go.
  
-### Проверить, что всё работает
- 
-```bash
-# Регистрация
-curl -X POST http://localhost:8080/registration \
-  -H "Content-Type: application/json" \
-  -d '{"Username":"test","Login":"test@test.com","Password":"secret"}'
- 
-# Вход и получение токена
-curl -X POST http://localhost:8080/login \
-  -H "Content-Type: application/json" \
-  -d '{"Login":"test@test.com","Password":"secret"}'
-```
- 
----
- 
 ## Запуск Android TV клиента (ветка frontend)
  
 Требования: [Android Studio](https://developer.android.com/studio) (Hedgehog или новее), Android SDK 34.
  
 ```bash
-git clone -b frontend https://github.com/<your-username>/<repo-name>.git
+git clone -b frontend
 ```
  
 1. Открыть папку проекта в Android Studio: **File → Open**
