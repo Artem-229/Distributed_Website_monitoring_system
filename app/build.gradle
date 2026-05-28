@@ -14,7 +14,7 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        // Backend URL — поменяй на свой IP если нужно
+        // Backend URL - поменять на свой IP если нужно
         buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8080/\"")
     }
 
