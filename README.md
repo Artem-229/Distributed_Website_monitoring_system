@@ -38,20 +38,20 @@ Docker Compose автоматически запустит:
 > Первый запуск займёт чуть больше времени - Docker скачивает образы и собирает бинарник Go.
  
 ## Запуск Android TV клиента (ветка frontend)
- 
-Требования: [Android Studio](https://developer.android.com/studio) (Hedgehog или новее), Android SDK 34.
- 
+  
 ```bash
 git clone -b frontend
 ```
- 
-1. Открыть папку проекта в Android Studio: **File → Open**
-2. Дождаться завершения Gradle sync
-3. В `app/src/main/java/com/webmonitor/tv/data/api/RetrofitClient.kt` указать IP-адрес машины с запущенным backend вместо `localhost` (эмулятор и реальное устройство не видят `localhost` хоста напрямую)
-4. Подключить Android TV устройство или запустить AVD с образом Android TV: **Device Manager → Create Device → TV**
-5. Нажать **Run**
-> На реальном Android TV-устройстве включить отладку по USB: **Настройки → Об устройстве → Сборка** (нажать 7 раз) → **Параметры разработчика → Отладка по USB**.
- 
+
+Требования: Android Studio (Ladybug или новее), Android SDK 36.
+
+- Открыть папку проекта в Android Studio: File → Open
+- Дождаться завершения Gradle sync
+- В app/build.gradle указать IP-адрес машины с запущенным backend:  
+groovy   buildConfigField("String", "BASE_URL", "\"http://<твой_IP>:8080/\"")
+- Подключить Android TV устройство или запустить AVD с образом Android TV: Device Manager → Create Device → TV
+- Нажать Run
+
 ---
  
 ## API
