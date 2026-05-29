@@ -48,7 +48,7 @@ git clone -b frontend
 - Открыть папку проекта в Android Studio: File → Open
 - Дождаться завершения Gradle sync
 - В app/build.gradle указать IP-адрес машины с запущенным backend:  
-groovy   buildConfigField("String", "BASE_URL", "\"http://<твой_IP>:8080/\"")
+groovy   buildConfigField("String", "BASE_URL", "\"http://<IP>:8080/\"")
 - Подключить Android TV устройство или запустить AVD с образом Android TV: Device Manager → Create Device → TV
 - Нажать Run
 
